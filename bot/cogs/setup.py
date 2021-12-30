@@ -2,7 +2,7 @@
 
 import discord
 from discord.ext import commands
-from ..resources import DB
+from .utils.db import DB
 from .utils import utils, api
 
 
@@ -28,7 +28,7 @@ class SetupCog(commands.Cog):
         except Exception as e:
             raise commands.UserInputError(message=str(e))
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -47,7 +47,7 @@ class SetupCog(commands.Cog):
         if not prematch_channel:
             prematch_channel = await ctx.guild.create_voice_channel(category=category, name='Pre-Match')
 
-        await DB.helper.query(
+        await DB.query(
             "UPDATE guilds\n"
             f"    SET api_key = '{api_key}',\n"
             f"        category = {category.id}\n,"

@@ -11,8 +11,9 @@ import os
 import logging
 
 from . import cogs
-from .cogs.utils import utils, db
-from .resources import Sessions, DB, Config
+from .cogs.utils import utils
+from .cogs.utils.db import DB
+from .resources import Sessions, Config
 
 
 _CWD = os.path.dirname(os.path.abspath(__file__))
@@ -38,8 +39,6 @@ class G5Bot(commands.AutoShardedBot):
         self.logo = 'https://images.discordapp.net/avatars/816798869421031435/532ee52c63bf04c59388cd13cc08cd3a.png?size=128'
         self.color = 0x0086FF
         self.logger = logging.getLogger('G5.bot')
-
-        DB.helper = db.DBHelper(Config.db_connect_url)
 
         # Add check to not respond to DM'd commands
         self.add_check(lambda ctx: ctx.guild is not None)
@@ -83,7 +82,7 @@ class G5Bot(commands.AutoShardedBot):
         match_cog = self.get_cog('MatchCog')
 
         if self.guilds:
-            await DB.helper.sync_guilds(*(guild.id for guild in self.guilds))
+            await DB.sync_guilds(*(guild.id for guild in self.guilds))
             self.logger.info('Checking maps emojis...')
             await utils.create_emojis(self)
 
@@ -105,7 +104,7 @@ class G5Bot(commands.AutoShardedBot):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         """ Insert the newly added guild to the guilds table. """
-        await DB.helper.sync_guilds(*(guild.id for guild in self.guilds))
+        await DB.sync_guilds(*(guild.id for guild in self.guilds))
         lobby_cog = self.get_cog('LobbyCog')
 
         try:
@@ -116,7 +115,7 @@ class G5Bot(commands.AutoShardedBot):
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         """ Delete the recently removed guild from the guilds table. """
-        await DB.helper.sync_guilds(*(guild.id for guild in self.guilds))
+        await DB.sync_guilds(*(guild.id for guild in self.guilds))
 
     def run(self):
         """ Override parent run to automatically include Discord token. """
@@ -125,7 +124,7 @@ class G5Bot(commands.AutoShardedBot):
     async def close(self):
         """ Override parent close to close the API session and DB connection pool. """
         await super().close()
-        await DB.helper.close()
+        await DB.close()
 
         self.logger.info('Closing API helper client session')
         await Sessions.requests.close()

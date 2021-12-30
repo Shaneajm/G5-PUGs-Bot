@@ -3,7 +3,7 @@
 from discord.ext import commands
 
 from .utils import utils, api
-from ..resources import DB
+from .utils.db import DB
 
 
 class StatsCog(commands.Cog):
@@ -16,7 +16,7 @@ class StatsCog(commands.Cog):
                       aliases=['rank'])
     async def stats(self, ctx):
         """"""
-        user_data = await DB.helper.fetch_row(
+        user_data = await DB.fetch_row(
             "SELECT * FROM users\n"
             f"    WHERE discord_id = {ctx.author.id};"
         )
@@ -55,7 +55,7 @@ class StatsCog(commands.Cog):
                       aliases=['top', 'ranks'])
     async def leaders(self, ctx):
         """"""
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )

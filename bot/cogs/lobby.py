@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import asyncio
 
 from .utils import utils
-from ..resources import DB
+from .utils.db import DB
 
 
 async def _embed_lobby_msg(bot, lobby):
@@ -120,7 +120,7 @@ class MapPoolMessage(discord.Message):
         map_pool_data = {m.dev_name: m.dev_name in self.map_pool for m in self.bot.all_maps.values()}
         col_vals = ',\n    '.join(f'{key} = {value}' for key, value in map_pool_data.items())
 
-        await DB.helper.query(
+        await DB.query(
             "UPDATE lobbies\n"
             f"    SET {col_vals}\n"
             f"    WHERE id = {self.lobby.id};"
@@ -216,7 +216,7 @@ class LobbyCog(commands.Cog):
 
     async def setup_lobbies(self, guild):
         """"""
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {guild.id};"
         )
@@ -233,13 +233,13 @@ class LobbyCog(commands.Cog):
             await lobbies_channel.set_permissions(db_guild.guild.self_role, send_messages=True)
             await lobbies_channel.set_permissions(db_guild.guild.default_role, send_messages=False)
 
-            await DB.helper.query(
+            await DB.query(
                 "UPDATE guilds\n"
                 f"    SET lobbies_channel = {lobbies_channel.id}\n"
                 f"    WHERE id = {db_guild.guild.id};"
             )
 
-        lobbies_msgs = await DB.helper.query(
+        lobbies_msgs = await DB.query(
             "SELECT message FROM lobbies\n"
             f"    WHERE guild = {db_guild.guild.id};",
             ret_key='message'
@@ -249,14 +249,14 @@ class LobbyCog(commands.Cog):
             try:
                 lobby_msg = await lobbies_channel.fetch_message(msg_id)
             except (discord.NotFound, discord.HTTPException):
-                lobby_data = await DB.helper.fetch_row(
+                lobby_data = await DB.fetch_row(
                     "SELECT * from lobbies\n"
                     f"    WHERE message = {msg_id};"
                 )
                 lobby = utils.Lobby.from_dict(self.bot, lobby_data)
                 embed = await _embed_lobby_msg(self.bot, lobby)
                 lobby_msg = await lobbies_channel.send(embed=embed)
-                await DB.helper.query(
+                await DB.query(
                     "UPDATE lobbies\n"
                     f"    SET message = {lobby_msg.id}\n"
                     f"    WHERE id = {lobby.id};"
@@ -268,7 +268,7 @@ class LobbyCog(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def create_lobby(self, ctx, *args):
         """"""
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -286,7 +286,7 @@ class LobbyCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         try:
-            lobby_id = await DB.helper.query(
+            lobby_id = await DB.query(
                 "INSERT INTO lobbies (guild, name, channel)\n"
                 f"    VALUES ({ctx.guild.id},\n"
                 f"        '{args[0]}',\n"
@@ -298,7 +298,7 @@ class LobbyCog(commands.Cog):
             self.bot.logger.error('Database Error on insert lobby:\n' + str(e))
             raise commands.UserInputError(message=utils.trans('failed-create-lobby'))
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * from lobbies\n"
             f"    WHERE id = {lobby_id[0]};"
         )
@@ -320,7 +320,7 @@ class LobbyCog(commands.Cog):
         await lobby_channel.set_permissions(ctx.guild.default_role, connect=False)
         await lobby_channel.set_permissions(db_guild.linked_role, connect=True)
 
-        await DB.helper.query(
+        await DB.query(
             "UPDATE lobbies\n"
             f"    SET message = {lobby_message.id},\n"
             f"        channel = {db_guild.lobbies_channel.id},\n"
@@ -346,7 +346,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * FROM lobbies\n"
             f"    WHERE id = {lobby_id} AND guild = {ctx.guild.id};"
         )
@@ -354,7 +354,7 @@ class LobbyCog(commands.Cog):
             raise commands.UserInputError(message=utils.trans('invalid-lobby-id'))
 
         lobby = utils.Lobby.from_dict(self.bot, lobby_data)
-        await DB.helper.query(
+        await DB.query(
             "DELETE FROM lobbies\n"
             f"    WHERE id = {lobby.id}"
         )
@@ -388,7 +388,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * FROM lobbies\n"
             f"    WHERE id = {lobby_id} AND guild = {ctx.guild.id};"
         )
@@ -405,18 +405,18 @@ class LobbyCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         self.locked_lobby[lobby.id] = True
-        await DB.helper.query(
+        await DB.query(
             "DELETE FROM queued_users\n"
             f"    WHERE lobby_id = {lobby.id};"
         )
-        await DB.helper.query(
+        await DB.query(
             "UPDATE lobbies\n"
             f"    SET capacity = {new_cap}\n"
             f"    WHERE id = {lobby.id};"
         )
         await self.update_last_msg(lobby, utils.trans('queue-emptied'))
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -448,7 +448,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * FROM lobbies\n"
             f"    WHERE id = {lobby_id} AND guild = {ctx.guild.id};"
         )
@@ -467,7 +467,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('team-method-already', new_method)
             raise commands.UserInputError(message=msg)
 
-        await DB.helper.query(
+        await DB.query(
             "UPDATE lobbies\n"
             f"    SET team_method = '{new_method}'\n"
             f"    WHERE id = {lobby.id};"
@@ -491,7 +491,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * FROM lobbies\n"
             f"    WHERE id = {lobby_id} AND guild = {ctx.guild.id};"
         )
@@ -510,7 +510,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('captains-method-already', new_method)
             raise commands.UserInputError(message=msg)
 
-        await DB.helper.query(
+        await DB.query(
             "UPDATE lobbies\n"
             f"    SET captain_method = '{new_method}'\n"
             f"    WHERE id = {lobby.id};"
@@ -533,7 +533,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * FROM lobbies\n"
             f"    WHERE id = {lobby_id} AND guild = {ctx.guild.id};"
         )
@@ -552,7 +552,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('series-value-already', new_series)
             raise commands.UserInputError(message=msg)
 
-        await DB.helper.query(
+        await DB.query(
             "UPDATE lobbies\n"
             f"    SET series_type = '{new_series}'\n"
             f"    WHERE id = {lobby.id};"
@@ -575,7 +575,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * FROM lobbies\n"
             f"    WHERE id = {lobby_id} AND guild = {ctx.guild.id};"
         )
@@ -598,7 +598,7 @@ class LobbyCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         region = f"'{new_region}'" if new_region else 'NULL'
-        await DB.helper.query(
+        await DB.query(
             "UPDATE lobbies\n"
             f"    SET region = {region}\n"
             f"    WHERE id = {lobby.id};"
@@ -620,7 +620,7 @@ class LobbyCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * FROM lobbies\n"
             f"    WHERE id = {lobby_id} AND guild = {ctx.guild.id};"
         )
@@ -647,14 +647,14 @@ class LobbyCog(commands.Cog):
 
         time_delta, unban_time = utils.unbantime(ctx.message.content)
 
-        await DB.helper.query(
+        await DB.query(
             "INSERT INTO banned_users (guild_id, user_id, unban_time)\n"
             f"    VALUES({ctx.guild.id}, {user.id}, '{unban_time}')\n"
             "    ON CONFLICT (guild_id, user_id) DO UPDATE\n"
             "    SET unban_time = EXCLUDED.unban_time;"
         )
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -682,7 +682,7 @@ class LobbyCog(commands.Cog):
 
         user_ids = [user.id for user in ctx.message.mentions]
 
-        unbanned_ids = await DB.helper.query(
+        unbanned_ids = await DB.query(
             "DELETE FROM banned_users\n"
             f"    WHERE guild_id = {ctx.guild.id} AND user_id::BIGINT = ANY(ARRAY{user_ids}::BIGINT[])\n"
             "    RETURNING user_id;",
@@ -700,7 +700,7 @@ class LobbyCog(commands.Cog):
         embed.set_footer(text=utils.trans('command-unban-footer'))
         await ctx.send(embed=embed)
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -713,7 +713,7 @@ class LobbyCog(commands.Cog):
         if not lobby.channel:
             return
 
-        lobby_data = await DB.helper.fetch_row(
+        lobby_data = await DB.fetch_row(
             "SELECT * FROM lobbies\n"
             f"    WHERE id = {lobby.id};"
         )
@@ -725,7 +725,7 @@ class LobbyCog(commands.Cog):
             await lobby_msg.edit(embed=embed)
         except (discord.NotFound, discord.HTTPException):
             lobby_msg = await lobby.channel.send(embed=embed)
-            await DB.helper.query(
+            await DB.query(
                 "UPDATE lobbies\n"
                 f"    SET message = {lobby_msg.id}\n"
                 f"    WHERE id = {lobby.id};"
@@ -733,7 +733,7 @@ class LobbyCog(commands.Cog):
 
     async def update_last_msg(self, lobby, title):
         """"""
-        queued_ids = await DB.helper.query(
+        queued_ids = await DB.query(
             "SELECT user_id FROM queued_users\n"
             f"    WHERE lobby_id = {lobby.id};",
             ret_key='user_id'
@@ -759,7 +759,7 @@ class LobbyCog(commands.Cog):
         except (AttributeError, discord.NotFound, discord.HTTPException):
             try:
                 msg = await lobby.queue_channel.send(embed=embed)
-                await DB.helper.query(
+                await DB.query(
                     "UPDATE lobbies\n"
                     f"    SET last_message = {msg.id}\n"
                     f"    WHERE id = {lobby.id};"
@@ -780,7 +780,7 @@ class LobbyCog(commands.Cog):
             return
 
         if before.channel is not None:
-            lobby_data = await DB.helper.fetch_row(
+            lobby_data = await DB.fetch_row(
                 "SELECT * from lobbies\n"
                 f"    WHERE lobby_channel = {before.channel.id};"
             )
@@ -789,7 +789,7 @@ class LobbyCog(commands.Cog):
                 before_lobby = utils.Lobby.from_dict(self.bot, lobby_data)
 
                 if not self.locked_lobby[before_lobby.id]:
-                    removed = await DB.helper.query(
+                    removed = await DB.query(
                         "DELETE FROM queued_users\n"
                         f"    WHERE lobby_id = {before_lobby.id} AND user_id = {user.id}\n"
                         "    RETURNING user_id;",
@@ -804,7 +804,7 @@ class LobbyCog(commands.Cog):
                     await self.update_last_msg(before_lobby, title)
 
         if after.channel is not None:
-            lobby_data = await DB.helper.fetch_row(
+            lobby_data = await DB.fetch_row(
                 "SELECT * from lobbies\n"
                 f"    WHERE lobby_channel = {after.channel.id};"
             )
@@ -816,19 +816,19 @@ class LobbyCog(commands.Cog):
 
             if not self.locked_lobby[after_lobby.id]:
                 awaitables = [
-                    DB.helper.fetch_row(
+                    DB.fetch_row(
                         "SELECT * FROM users\n"
                         f"    WHERE discord_id = {user.id};"
                     ),
-                    DB.helper.query(
+                    DB.query(
                         "SELECT user_id FROM queued_users\n"
                         f"    WHERE lobby_id = {after_lobby.id};",
                         ret_key='user_id'
                     ),
-                    DB.helper.get_banned_users(
+                    DB.get_banned_users(
                         after.channel.guild.id
                     ),
-                    DB.helper.fetch_row(
+                    DB.fetch_row(
                         "SELECT * FROM match_users\n"
                         f"    WHERE user_id = {user.id};",
                     )
@@ -853,7 +853,7 @@ class LobbyCog(commands.Cog):
                 elif len(queued_ids) >= after_lobby.capacity:
                     title = utils.trans('lobby-is-full', user.display_name)
                 else:
-                    await DB.helper.query(
+                    await DB.query(
                         "INSERT INTO queued_users (lobby_id, user_id)\n"
                         f"    VALUES ({after_lobby.id},\n"
                         f"            {user.id});"
@@ -864,7 +864,7 @@ class LobbyCog(commands.Cog):
                     if len(queued_ids) == after_lobby.capacity:
                         self.locked_lobby[after_lobby.id] = True
 
-                        guild_data = await DB.helper.fetch_row(
+                        guild_data = await DB.fetch_row(
                             "SELECT * FROM guilds\n"
                             f"    WHERE id = {after.channel.guild.id};"
                         )
@@ -898,7 +898,7 @@ class LobbyCog(commands.Cog):
                             awaitables = [
                                 ready_msg.clear_reactions(),
                                 ready_msg.edit(content='', embed=burst_embed),
-                                DB.helper.query(
+                                DB.query(
                                     "DELETE FROM queued_users\n"
                                     f"    WHERE lobby_id = {after_lobby.id} AND user_id::BIGINT = ANY(ARRAY{unreadied_ids}::BIGINT[]);"
                                 )
@@ -927,7 +927,7 @@ class LobbyCog(commands.Cog):
                                     awaitables.append(user.move_to(prematch_channel))
                                 await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-                            await DB.helper.query(
+                            await DB.query(
                                 "DELETE FROM queued_users\n"
                                 f"    WHERE lobby_id = {after_lobby.id};"
                             )
@@ -946,17 +946,17 @@ class LobbyCog(commands.Cog):
         there_banned_users = False
         unbanned_users = {}
         for gld in self.bot.guilds:
-            guild_data = await DB.helper.fetch_row(
+            guild_data = await DB.fetch_row(
                 "SELECT * FROM guilds\n"
                 f"    WHERE id = {gld.id};"
             )
             db_guild = utils.Guild.from_dict(self.bot, guild_data)
 
-            guild_bans = await DB.helper.get_banned_users(gld.id)
+            guild_bans = await DB.get_banned_users(gld.id)
 
             if guild_bans:
                 there_banned_users = True
-                guild_unbanned_users = await DB.helper.query(
+                guild_unbanned_users = await DB.query(
                     "DELETE FROM banned_users\n"
                     f"    WHERE guild_id = {gld.id} AND CURRENT_TIMESTAMP > unban_time\n"
                     "    RETURNING user_id;",

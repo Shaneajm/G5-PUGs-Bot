@@ -4,8 +4,9 @@ import datetime
 from aiohttp import ClientConnectionError, ContentTypeError
 from asyncio import TimeoutError
 
+from .db import DB
 from .utils import FLAG_CODES
-from ...resources import Config, Sessions, DB
+from ...resources import Config, Sessions
 
 
 async def check_auth(auth):
@@ -54,7 +55,7 @@ class Teams:
     async def create_team(name, users, auth):
         """"""
         user_ids = [user.id for user in users]
-        users_data = await DB.helper.get_users(user_ids)
+        users_data = await DB.get_users(user_ids)
         users_data.sort(key=lambda x: user_ids.index(x['discord_id']))
 
         url = f'{Config.api_url}/teams'
@@ -387,7 +388,7 @@ class Leaderboard:
     async def get_leaderboard(cls, users, pug_stats=True, new_players=False):
         """"""
         user_ids = [user.id for user in users]
-        users_data = await DB.helper.get_users(user_ids)
+        users_data = await DB.get_users(user_ids)
         if not users_data:
             return
         # users_data.sort(key=lambda x: user_ids.index(x['discord_id']))

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 import discord
 
-from bot.resources import DB, Config
+from bot.resources import Config
 
 
 time_arg_pattern = re.compile(r'\b((?:(?P<days>[0-9]+)d)|(?:(?P<hours>[0-9]+)h)|(?:(?P<minutes>[0-9]+)m))\b')

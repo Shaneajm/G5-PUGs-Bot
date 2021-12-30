@@ -4,7 +4,7 @@ from discord.ext import commands
 from steam.steamid import SteamID, from_url
 
 from .utils import utils
-from ..resources import DB
+from .utils.db import DB
 
 
 class LinkCog(commands.Cog):
@@ -17,7 +17,7 @@ class LinkCog(commands.Cog):
                       usage='link <steam_id> {OPTIONAL flag_emoji}')
     async def link(self, ctx, steam_id=None, flag='🇺🇸'):
         """"""
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -31,12 +31,12 @@ class LinkCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        banned_users = await DB.helper.get_banned_users(ctx.guild.id)
+        banned_users = await DB.get_banned_users(ctx.guild.id)
 
         if user.id in banned_users:
             raise commands.UserInputError(message=utils.trans('no-access-for-ban'))
 
-        user_data = await DB.helper.fetch_row(
+        user_data = await DB.fetch_row(
             "SELECT * FROM users\n"
             f"    WHERE discord_id = {user.id};"
         )
@@ -61,7 +61,7 @@ class LinkCog(commands.Cog):
             raise commands.UserInputError(message=utils.trans('invalid-flag-emoji'))
 
         try:
-            await DB.helper.query(
+            await DB.query(
                 "INSERT INTO users (discord_id, steam_id, flag)\n"
                 f"    VALUES({user.id}, '{steam}', '{flag}')\n"
                 "    ON CONFLICT DO NOTHING\n"
@@ -86,14 +86,14 @@ class LinkCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        user_data = await DB.helper.fetch_row(
+        user_data = await DB.fetch_row(
             "SELECT * FROM users\n"
             f"    WHERE discord_id = {user.id};"
         )
         if not user_data:
             raise commands.UserInputError(message=utils.trans('unable-to-unlink', user.mention))
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -102,7 +102,7 @@ class LinkCog(commands.Cog):
         if not db_guild.is_setup:
             raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
 
-        await DB.helper.query(
+        await DB.query(
             "DELETE FROM users\n"
             f"    WHERE discord_id = {user.id};"
         )

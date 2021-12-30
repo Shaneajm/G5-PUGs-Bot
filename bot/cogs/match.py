@@ -4,7 +4,8 @@ from discord.ext import commands, tasks
 import discord
 
 from .utils import utils, api
-from ..resources import DB, Config
+from .utils.db import DB
+from ..resources import Config
 
 from random import shuffle
 from datetime import datetime
@@ -395,7 +396,7 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -429,7 +430,7 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -438,7 +439,7 @@ class MatchCog(commands.Cog):
         if not db_guild.is_setup:
             raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
 
-        user_data = await DB.helper.fetch_row(
+        user_data = await DB.fetch_row(
             "SELECT * FROM users\n"
             f"    WHERE discord_id = {user.id};"
         )
@@ -453,12 +454,12 @@ class MatchCog(commands.Cog):
         except Exception as e:
             raise commands.UserInputError(message=str(e))
 
-        await DB.helper.query(
+        await DB.query(
             "INSERT INTO match_users (match_id, user_id)\n"
             f"    VALUES({match_id}, {user.id});"
         )
 
-        match_data = await DB.helper.fetch_row(
+        match_data = await DB.fetch_row(
             "SELECT * FROM matches\n"
             f"    WHERE id = {match_id};"
         )
@@ -495,7 +496,7 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)     
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -504,7 +505,7 @@ class MatchCog(commands.Cog):
         if not db_guild.is_setup:
             raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))      
 
-        user_data = await DB.helper.fetch_row(
+        user_data = await DB.fetch_row(
             "SELECT * FROM users\n"
             f"    WHERE discord_id = {user.id};"
         )
@@ -519,12 +520,12 @@ class MatchCog(commands.Cog):
         except Exception as e:
             raise commands.UserInputError(message=str(e))
 
-        await DB.helper.query(
+        await DB.query(
             "DELETE FROM match_users\n"
             f"    WHERE match_id = {match_id} AND user_id = {user.id};"
         )
 
-        match_data = await DB.helper.fetch_row(
+        match_data = await DB.fetch_row(
             "SELECT * FROM matches\n"
             f"    WHERE id = {match_id};"
         )
@@ -551,7 +552,7 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -578,7 +579,7 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
@@ -782,7 +783,7 @@ class MatchCog(commands.Cog):
             
             await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-            await DB.helper.query(
+            await DB.query(
                 "INSERT INTO matches (id, guild, channel, message, category, team1_channel, team2_channel)\n"
                 f"    VALUES ({match_id},\n"
                 f"        {guild.id},\n"
@@ -793,7 +794,7 @@ class MatchCog(commands.Cog):
                 f"        {team2_channel.id});"
             )
 
-            await DB.helper.insert_match_users(
+            await DB.insert_match_users(
                 match_id,
                 *[user.id for user in team_one + team_two]
             )
@@ -835,7 +836,7 @@ class MatchCog(commands.Cog):
 
     @tasks.loop(seconds=20.0)
     async def check_matches(self):
-        match_ids = await DB.helper.query(
+        match_ids = await DB.query(
             "SELECT id from matches;",
             ret_key='id'
         )
@@ -928,13 +929,13 @@ class MatchCog(commands.Cog):
 
         embed = self.bot.embed_template(title=title, description=description)
 
-        match_data = await DB.helper.fetch_row(
+        match_data = await DB.fetch_row(
             "SELECT * FROM matches\n"
             f"    WHERE id = {match_id};"
         )
         db_match = utils.Match.from_dict(self.bot, match_data)
 
-        guild_data = await DB.helper.fetch_row(
+        guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {db_match.guild.id};"
         )
@@ -951,10 +952,10 @@ class MatchCog(commands.Cog):
                 pass
         
         guild = db_guild.guild
-        banned_users = await DB.helper.get_banned_users(guild.id)
+        banned_users = await DB.get_banned_users(guild.id)
         banned_users = [guild.get_member(user_id) for user_id in banned_users]
 
-        match_player_ids = await DB.helper.query(
+        match_player_ids = await DB.query(
             "SELECT user_id FROM match_users\n"
             f"    WHERE match_id = {match_id};",
             ret_key='user_id'
@@ -976,7 +977,7 @@ class MatchCog(commands.Cog):
             except (AttributeError, discord.NotFound):
                 pass
 
-        await DB.helper.query(
+        await DB.query(
             "DELETE FROM matches\n"
             f"    WHERE id = {db_match.id};"
         )
