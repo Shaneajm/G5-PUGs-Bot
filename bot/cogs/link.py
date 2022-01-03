@@ -15,17 +15,9 @@ class LinkCog(commands.Cog):
 
     @commands.command(brief=utils.trans('link-command-brief'),
                       usage='link <steam_id> {OPTIONAL flag_emoji}')
+    @utils.is_guild_setup()
     async def link(self, ctx, steam_id=None, flag='🇺🇸'):
         """"""
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
-        
-        if not db_guild.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
-
         user = ctx.author
         if not steam_id:
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
@@ -71,6 +63,12 @@ class LinkCog(commands.Cog):
             print(e)
             raise commands.UserInputError(message=utils.trans('steam-linked-to-another-user'))
 
+        guild_data = await DB.fetch_row(
+            "SELECT * FROM guilds\n"
+            f"    WHERE id = {ctx.guild.id};"
+        )
+        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+
         await user.add_roles(db_guild.linked_role)
         embed = self.bot.embed_template(description=utils.trans('link-steam-success', user.mention, steam))
         await ctx.message.reply(embed=embed)
@@ -78,6 +76,7 @@ class LinkCog(commands.Cog):
     @commands.command(brief=utils.trans('command-unlink-brief'),
                       usage='unlink <mention>')
     @commands.has_permissions(ban_members=True)
+    @utils.is_guild_setup()
     async def unlink(self, ctx):
         """"""
         try:
@@ -93,19 +92,17 @@ class LinkCog(commands.Cog):
         if not user_data:
             raise commands.UserInputError(message=utils.trans('unable-to-unlink', user.mention))
 
+        await DB.query(
+            "DELETE FROM users\n"
+            f"    WHERE discord_id = {user.id};"
+        )
+
         guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
         db_guild = utils.Guild.from_dict(self.bot, guild_data)
 
-        if not db_guild.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
-
-        await DB.query(
-            "DELETE FROM users\n"
-            f"    WHERE discord_id = {user.id};"
-        )
         await user.remove_roles(db_guild.linked_role)
         embed = self.bot.embed_template(description=utils.trans('unlink-steam-success', user.mention))
         await ctx.message.reply(embed=embed)

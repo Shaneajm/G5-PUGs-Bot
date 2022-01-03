@@ -266,20 +266,21 @@ class LobbyCog(commands.Cog):
                       usage='create-lobby <name>',
                       aliases=['create-lobby', 'createlobby'])
     @commands.has_permissions(administrator=True)
+    @utils.is_guild_setup()
     async def create_lobby(self, ctx, *args):
         """"""
+        if len(args) < 1:
+            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            raise commands.UserInputError(message=msg)
+
         guild_data = await DB.fetch_row(
             "SELECT * FROM guilds\n"
             f"    WHERE id = {ctx.guild.id};"
         )
         db_guild = utils.Guild.from_dict(self.bot, guild_data)
-        
+
         if not db_guild.is_setup:
             raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
-
-        if len(args) < 1:
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
-            raise commands.UserInputError(message=msg)
 
         if not db_guild.lobbies_channel:
             msg = utils.trans('lobbies-chanel-not-existed', self.bot.command_prefix[0])
@@ -637,6 +638,7 @@ class LobbyCog(commands.Cog):
                       brief=utils.trans('command-ban-brief'),
                       aliases=['banned'])
     @commands.has_permissions(ban_members=True)
+    @utils.is_guild_setup()
     async def ban(self, ctx):
         """"""
         try:
@@ -674,6 +676,7 @@ class LobbyCog(commands.Cog):
                       brief=utils.trans('command-unban-brief'),
                       aliases=['unbanned'])
     @commands.has_permissions(ban_members=True)
+    @utils.is_guild_setup()
     async def unban(self, ctx):
         """"""
         if len(ctx.message.mentions) == 0:

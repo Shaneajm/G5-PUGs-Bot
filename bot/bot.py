@@ -61,7 +61,8 @@ class G5Bot(commands.AutoShardedBot):
 
     def embed_template(self, **kwargs):
         """ Implement the bot's default-style embed. """
-        kwargs['color'] = self.color
+        if 'color' not in kwargs:
+            kwargs['color'] = self.color
         embed = discord.Embed(**kwargs)
         embed.set_author(name='G5', url='https://top.gg/bot/816798869421031435', icon_url=self.logo)
         return embed

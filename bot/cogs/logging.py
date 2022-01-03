@@ -100,7 +100,7 @@ class LoggingCog(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         """ Log exceptions inside of commands. """
-        if isinstance(error, (commands.MissingPermissions, commands.UserInputError)):
+        if isinstance(error, (commands.MissingPermissions, commands.UserInputError, commands.CheckFailure)):
             return
 
         self.log_exception(f'Uncaught exception in "{ctx.command}" command:', error)

@@ -388,6 +388,7 @@ class MatchCog(commands.Cog):
                       brief=utils.trans('command-end-brief'),
                       aliases=['cancel', 'stop'])
     @commands.has_permissions(kick_members=True)
+    @utils.is_guild_setup()
     async def end(self, ctx, match_id=None):
         """"""
         try:
@@ -402,9 +403,6 @@ class MatchCog(commands.Cog):
         )
         db_guild = utils.Guild.from_dict(self.bot, guild_data)
 
-        if not db_guild.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
-
         try:
             await api.Matches.cancel_match(match_id, db_guild.auth)
         except Exception as e:
@@ -417,6 +415,7 @@ class MatchCog(commands.Cog):
     @commands.command(usage='add <match_id> <team1|team2|spec> <mention>',
                       brief=utils.trans('command-add-brief'))
     @commands.has_permissions(kick_members=True)
+    @utils.is_guild_setup()
     async def add(self, ctx, match_id=None, team=None):
         """"""
         if team not in ['team1', 'team2', 'spec']:
@@ -430,15 +429,6 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
-
-        if not db_guild.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
-
         user_data = await DB.fetch_row(
             "SELECT * FROM users\n"
             f"    WHERE discord_id = {user.id};"
@@ -449,6 +439,13 @@ class MatchCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         db_user = utils.User.from_dict(user_data, ctx.guild)
+
+        guild_data = await DB.fetch_row(
+            "SELECT * FROM guilds\n"
+            f"    WHERE id = {ctx.guild.id};"
+        )
+        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+
         try:
             await api.Matches.add_match_player(db_user, match_id, team, db_guild.auth)
         except Exception as e:
@@ -487,6 +484,7 @@ class MatchCog(commands.Cog):
     @commands.command(usage='remove <match_id> <mention>',
                       brief=utils.trans('command-remove-brief'))
     @commands.has_permissions(kick_members=True)
+    @utils.is_guild_setup()
     async def remove(self, ctx, match_id=None):
         """"""
         try:
@@ -494,16 +492,7 @@ class MatchCog(commands.Cog):
             user = ctx.message.mentions[0]
         except (TypeError, ValueError, IndexError):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
-            raise commands.UserInputError(message=msg)     
-
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
-
-        if not db_guild.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))      
+            raise commands.UserInputError(message=msg)
 
         user_data = await DB.fetch_row(
             "SELECT * FROM users\n"
@@ -515,6 +504,13 @@ class MatchCog(commands.Cog):
             raise commands.UserInputError(message=msg)
 
         db_user = utils.User.from_dict(user_data, ctx.guild)
+
+        guild_data = await DB.fetch_row(
+            "SELECT * FROM guilds\n"
+            f"    WHERE id = {ctx.guild.id};"
+        )
+        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+
         try:
             await api.Matches.remove_match_player(db_user, match_id, db_guild.auth)
         except Exception as e:
@@ -546,6 +542,7 @@ class MatchCog(commands.Cog):
     @commands.command(usage='pause <match_id>',
                       brief=utils.trans('command-pause-brief'))
     @commands.has_permissions(kick_members=True)
+    @utils.is_guild_setup()
     async def pause(self, ctx, match_id=None):
         """"""
         if not match_id:
@@ -557,9 +554,6 @@ class MatchCog(commands.Cog):
             f"    WHERE id = {ctx.guild.id};"
         )
         db_guild = utils.Guild.from_dict(self.bot, guild_data)
-
-        if not db_guild.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
 
         try:
             await api.Matches.pause_match(match_id, db_guild.auth)
@@ -573,6 +567,7 @@ class MatchCog(commands.Cog):
     @commands.command(usage='unpause <match_id>',
                       brief=utils.trans('command-unpause-brief'))
     @commands.has_permissions(kick_members=True)
+    @utils.is_guild_setup()
     async def unpause(self, ctx, match_id=None):
         """"""
         if not match_id:
@@ -584,9 +579,6 @@ class MatchCog(commands.Cog):
             f"    WHERE id = {ctx.guild.id};"
         )
         db_guild = utils.Guild.from_dict(self.bot, guild_data)
-
-        if not db_guild.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
 
         try:
             await api.Matches.unpause_match(match_id, db_guild.auth)

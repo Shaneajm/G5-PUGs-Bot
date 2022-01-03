@@ -55,15 +55,6 @@ class StatsCog(commands.Cog):
                       aliases=['top', 'ranks'])
     async def leaders(self, ctx):
         """"""
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
-
-        if not db_guild.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
-
         num = 10
         try:
             guild_players = await api.Leaderboard.get_leaderboard(ctx.guild.members)

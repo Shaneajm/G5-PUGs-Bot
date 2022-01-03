@@ -8,7 +8,8 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 import discord
-
+from discord.ext import commands
+from bot.cogs.utils.db import DB
 from bot.resources import Config
 
 
@@ -341,3 +342,21 @@ async def create_emojis(bot):
                 map_dev,
                 f'<:{map_dev}:{emoji.id}>'
             )
+
+
+def is_guild_setup():
+    async def predicate(ctx):
+        guild_data = await DB.fetch_row(
+            "SELECT * FROM guilds\n"
+            f"    WHERE id =  {ctx.guild.id};"
+        )
+        db_guild = Guild.from_dict(ctx.bot, guild_data)
+
+        if not db_guild.is_setup:
+            title = trans('bot-not-setup', ctx.bot.command_prefix[0])
+            embed = ctx.bot.embed_template(title=title, color=0xFF0000)
+            await ctx.message.reply(embed=embed)
+            return False
+        return True
+    
+    return commands.check(predicate)
