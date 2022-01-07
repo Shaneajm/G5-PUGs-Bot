@@ -118,6 +118,20 @@ class G5Bot(commands.AutoShardedBot):
         """ Delete the recently removed guild from the guilds table. """
         await DB.sync_guilds(*(guild.id for guild in self.guilds))
 
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        """"""
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.trigger_typing()
+            missing_perm = error.missing_perms[0].replace('_', ' ')
+            embed = self.embed_template(title=utils.trans('command-required-perm', missing_perm), color=0xFF0000)
+            await ctx.message.reply(embed=embed)
+
+        if isinstance(error, commands.UserInputError):
+            await ctx.trigger_typing()
+            embed = self.embed_template(description='**' + str(error) + '**', color=0xFF0000)
+            await ctx.message.reply(embed=embed)
+
     def run(self):
         """ Override parent run to automatically include Discord token. """
         super().run(Config.discord_token)

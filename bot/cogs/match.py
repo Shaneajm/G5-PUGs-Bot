@@ -4,7 +4,7 @@ from discord.ext import commands, tasks
 import discord
 
 from .utils import utils, api
-from .utils.db import DB
+from .. import models
 from ..resources import Config
 
 from random import shuffle
@@ -388,7 +388,7 @@ class MatchCog(commands.Cog):
                       brief=utils.trans('command-end-brief'),
                       aliases=['cancel', 'stop'])
     @commands.has_permissions(kick_members=True)
-    @utils.is_guild_setup()
+    @models.Guild.is_guild_setup()
     async def end(self, ctx, match_id=None):
         """"""
         try:
@@ -397,14 +397,10 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+        guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
 
         try:
-            await api.Matches.cancel_match(match_id, db_guild.auth)
+            await api.Matches.cancel_match(match_id, guild_mdl.auth)
         except Exception as e:
             raise commands.UserInputError(message=str(e))
 
@@ -415,7 +411,7 @@ class MatchCog(commands.Cog):
     @commands.command(usage='add <match_id> <team1|team2|spec> <mention>',
                       brief=utils.trans('command-add-brief'))
     @commands.has_permissions(kick_members=True)
-    @utils.is_guild_setup()
+    @models.Guild.is_guild_setup()
     async def add(self, ctx, match_id=None, team=None):
         """"""
         if team not in ['team1', 'team2', 'spec']:
@@ -429,51 +425,33 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        user_data = await DB.fetch_row(
-            "SELECT * FROM users\n"
-            f"    WHERE discord_id = {user.id};"
-        )
-
-        if not user_data:
+        user_mdl = await models.User.get_user(user.id, ctx.guild)
+        if not user_mdl:
             msg = utils.trans('command-add-not-linked', user.mention)
             raise commands.UserInputError(message=msg)
 
-        db_user = utils.User.from_dict(user_data, ctx.guild)
-
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+        guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
 
         try:
-            await api.Matches.add_match_player(db_user, match_id, team, db_guild.auth)
+            await api.Matches.add_match_player(user_mdl, match_id, team, guild_mdl.auth)
         except Exception as e:
             raise commands.UserInputError(message=str(e))
 
-        await DB.query(
-            "INSERT INTO match_users (match_id, user_id)\n"
-            f"    VALUES({match_id}, {user.id});"
-        )
+        await models.Match.insert_match_user(match_id, user.id)
+        match_mdl = await models.Match.get_match(self.bot, match_id)
 
-        match_data = await DB.fetch_row(
-            "SELECT * FROM matches\n"
-            f"    WHERE id = {match_id};"
-        )
-        db_match = utils.Match.from_dict(self.bot, match_data)
-
-        await user.remove_roles(db_guild.linked_role)
+        await user.remove_roles(guild_mdl.linked_role)
 
         if team == 'team1':
-            await db_match.team1_channel.set_permissions(user, connect=True)
+            await match_mdl.team1_channel.set_permissions(user, connect=True)
             try:
-                await user.move_to(db_match.team1_channel)
+                await user.move_to(match_mdl.team1_channel)
             except:
                 pass
         elif team == 'team2':
-            await db_match.team2_channel.set_permissions(user, connect=True)
+            await match_mdl.team2_channel.set_permissions(user, connect=True)
             try:
-                await user.move_to(db_match.team2_channel)
+                await user.move_to(match_mdl.team2_channel)
             except:
                 pass
 
@@ -484,7 +462,7 @@ class MatchCog(commands.Cog):
     @commands.command(usage='remove <match_id> <mention>',
                       brief=utils.trans('command-remove-brief'))
     @commands.has_permissions(kick_members=True)
-    @utils.is_guild_setup()
+    @models.Guild.is_guild_setup()
     async def remove(self, ctx, match_id=None):
         """"""
         try:
@@ -494,44 +472,26 @@ class MatchCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        user_data = await DB.fetch_row(
-            "SELECT * FROM users\n"
-            f"    WHERE discord_id = {user.id};"
-        )
-
-        if not user_data:
+        user_mdl = await models.User.get_user(user.id, ctx.guild)
+        if not user_mdl:
             msg = utils.trans('command-add-not-linked', user.mention)
             raise commands.UserInputError(message=msg)
 
-        db_user = utils.User.from_dict(user_data, ctx.guild)
-
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+        guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
 
         try:
-            await api.Matches.remove_match_player(db_user, match_id, db_guild.auth)
+            await api.Matches.remove_match_player(user_mdl, match_id, guild_mdl.auth)
         except Exception as e:
             raise commands.UserInputError(message=str(e))
 
-        await DB.query(
-            "DELETE FROM match_users\n"
-            f"    WHERE match_id = {match_id} AND user_id = {user.id};"
-        )
+        await models.Match.delete_match_user(match_id, user.id)
+        match_mdl = await models.Match.get_match(self.bot, match_id)
 
-        match_data = await DB.fetch_row(
-            "SELECT * FROM matches\n"
-            f"    WHERE id = {match_id};"
-        )
-        db_match = utils.Match.from_dict(self.bot, match_data)
-
-        await user.add_roles(db_guild.linked_role)
-        await db_match.team1_channel.set_permissions(user, connect=False)
-        await db_match.team2_channel.set_permissions(user, connect=False)
+        await user.add_roles(guild_mdl.linked_role)
+        await match_mdl.team1_channel.set_permissions(user, connect=False)
+        await match_mdl.team2_channel.set_permissions(user, connect=False)
         try:
-            await user.move_to(db_guild.prematch_channel)
+            await user.move_to(guild_mdl.prematch_channel)
         except:
             pass
 
@@ -542,21 +502,17 @@ class MatchCog(commands.Cog):
     @commands.command(usage='pause <match_id>',
                       brief=utils.trans('command-pause-brief'))
     @commands.has_permissions(kick_members=True)
-    @utils.is_guild_setup()
+    @models.Guild.is_guild_setup()
     async def pause(self, ctx, match_id=None):
         """"""
         if not match_id:
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+        guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
 
         try:
-            await api.Matches.pause_match(match_id, db_guild.auth)
+            await api.Matches.pause_match(match_id, guild_mdl.auth)
         except Exception as e:
             raise commands.UserInputError(message=str(e))
 
@@ -567,21 +523,17 @@ class MatchCog(commands.Cog):
     @commands.command(usage='unpause <match_id>',
                       brief=utils.trans('command-unpause-brief'))
     @commands.has_permissions(kick_members=True)
-    @utils.is_guild_setup()
+    @models.Guild.is_guild_setup()
     async def unpause(self, ctx, match_id=None):
         """"""
         if not match_id:
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+        guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
 
         try:
-            await api.Matches.unpause_match(match_id, db_guild.auth)
+            await api.Matches.unpause_match(match_id, guild_mdl.auth)
         except Exception as e:
             raise commands.UserInputError(message=str(e))        
 
@@ -638,7 +590,7 @@ class MatchCog(commands.Cog):
         menu = MapVetoMessage(message, self.bot, lobby)
         return await menu.veto(captain_1, captain_2)
 
-    async def start_match(self, users, message, lobby, db_guild):
+    async def start_match(self, users, message, lobby, guild_mdl):
         """"""
         title = utils.trans('match-setup-process')
         description = ''
@@ -656,8 +608,8 @@ class MatchCog(commands.Cog):
             description = '⌛️ 1. ' + utils.trans('creating-teams')
             embed = self.bot.embed_template(title=title, description=description)
             await message.edit(content='', embed=embed)
-            team1_id = await api.Teams.create_team(team1_name, team_one, db_guild.auth)
-            team2_id = await api.Teams.create_team(team2_name, team_two, db_guild.auth)
+            team1_id = await api.Teams.create_team(team1_name, team_one, guild_mdl.auth)
+            team2_id = await api.Teams.create_team(team2_name, team_two, guild_mdl.auth)
             await asyncio.sleep(2)
 
             description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
@@ -676,7 +628,7 @@ class MatchCog(commands.Cog):
             await message.edit(embed=embed)
             await asyncio.sleep(2)
 
-            api_servers = await api.Servers.get_servers(db_guild.auth)
+            api_servers = await api.Servers.get_servers(guild_mdl.auth)
             match_server = None
             for server in api_servers:
                 if server.in_use:
@@ -684,7 +636,7 @@ class MatchCog(commands.Cog):
                 if lobby.region and server.flag != lobby.region:
                     continue
                 try:
-                    server_up = await api.Servers.is_server_available(server.id, db_guild.auth)
+                    server_up = await api.Servers.is_server_available(server.id, guild_mdl.auth)
                 except Exception as e:
                     print(e)
                     continue
@@ -693,8 +645,8 @@ class MatchCog(commands.Cog):
                     break
 
             if not match_server:
-                await api.Teams.delete_team(team1_id, db_guild.auth)
-                await api.Teams.delete_team(team2_id, db_guild.auth)
+                await api.Teams.delete_team(team1_id, guild_mdl.auth)
+                await api.Teams.delete_team(team2_id, guild_mdl.auth)
                 description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
                               '✅ 2. ' + utils.trans('pick-maps') + '\n' \
                               '❌ 3. ' + utils.trans('find-servers')
@@ -721,7 +673,7 @@ class MatchCog(commands.Cog):
                 team2_id,
                 str_maps,
                 len(team_one + team_two),
-                db_guild.auth
+                guild_mdl.auth
             )
 
             description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
@@ -757,7 +709,18 @@ class MatchCog(commands.Cog):
                 user_limit=len(team_two)
             )
 
+            dict_match = {
+                'id': match_id,
+                'guild': guild.id,
+                'channel': lobby.queue_channel.id,
+                'message': message.id,
+                'category': match_catg.id,
+                'team1_channel': team1_channel.id,
+                'team2_channel': team2_channel.id
+            }
+
             awaitables = [
+                models.Match.insert_match(dict_match, [user.id for user in team_one + team_two]),
                 team1_channel.set_permissions(guild.self_role, connect=True),
                 team2_channel.set_permissions(guild.self_role, connect=True),
                 team1_channel.set_permissions(guild.default_role, connect=False, read_messages=True),
@@ -774,22 +737,6 @@ class MatchCog(commands.Cog):
                         awaitables.append(user.move_to(team2_channel))
             
             await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
-
-            await DB.query(
-                "INSERT INTO matches (id, guild, channel, message, category, team1_channel, team2_channel)\n"
-                f"    VALUES ({match_id},\n"
-                f"        {guild.id},\n"
-                f"        {lobby.queue_channel.id},\n"
-                f"        {message.id},\n"
-                f"        {match_catg.id},\n"
-                f"        {team1_channel.id},\n"
-                f"        {team2_channel.id});"
-            )
-
-            await DB.insert_match_users(
-                match_id,
-                *[user.id for user in team_one + team_two]
-            )
 
             connect_url = f'steam://connect/{match_server.ip_string}:{match_server.port}'
             connect_command = f'connect {match_server.ip_string}:{match_server.port}'
@@ -828,10 +775,7 @@ class MatchCog(commands.Cog):
 
     @tasks.loop(seconds=20.0)
     async def check_matches(self):
-        match_ids = await DB.query(
-            "SELECT id from matches;",
-            ret_key='id'
-        )
+        match_ids = await models.Match.get_live_matches_ids()
 
         if match_ids:
             for match_id in match_ids:
@@ -921,73 +865,39 @@ class MatchCog(commands.Cog):
 
         embed = self.bot.embed_template(title=title, description=description)
 
-        match_data = await DB.fetch_row(
-            "SELECT * FROM matches\n"
-            f"    WHERE id = {match_id};"
-        )
-        db_match = utils.Match.from_dict(self.bot, match_data)
-
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {db_match.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
+        match_mdl = await models.Match.get_match(self.bot, match_id)
+        guild_mdl = await models.Guild.get_guild(self.bot, match_mdl.guild.id)
 
         try:
-            message = await db_match.message.fetch()
+            message = await match_mdl.message.fetch()
             await message.edit(embed=embed)
         except Exception as e:
             try:
-                await db_match.channel.send(embed=embed)
+                await match_mdl.channel.send(embed=embed)
             except Exception as e:
                 print(e)
                 pass
         
-        guild = db_guild.guild
-        banned_users = await DB.get_banned_users(guild.id)
+        guild = guild_mdl.guild
+        banned_users = await models.Guild.get_banned_users(guild.id)
         banned_users = [guild.get_member(user_id) for user_id in banned_users]
 
-        match_player_ids = await DB.query(
-            "SELECT user_id FROM match_users\n"
-            f"    WHERE match_id = {match_id};",
-            ret_key='user_id'
-        )
+        match_player_ids = await models.Match.get_match_users(match_id)
         match_players = [guild.get_member(user_id) for user_id in match_player_ids]
 
         awaitables = []
         for user in match_players:
             if user is not None:
                 if user not in banned_users:
-                    awaitables.append(user.add_roles(db_guild.linked_role))
-                awaitables.append(user.move_to(db_guild.prematch_channel))
+                    awaitables.append(user.add_roles(guild_mdl.linked_role))
+                awaitables.append(user.move_to(guild_mdl.prematch_channel))
 
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
-        for channel in [db_match.team1_channel, db_match.team2_channel, db_match.category]:
+        for channel in [match_mdl.team1_channel, match_mdl.team2_channel, match_mdl.category]:
             try:
                 await channel.delete()
             except (AttributeError, discord.NotFound):
                 pass
 
-        await DB.query(
-            "DELETE FROM matches\n"
-            f"    WHERE id = {db_match.id};"
-        )
-
-    @end.error
-    @add.error
-    @remove.error
-    @pause.error
-    @unpause.error
-    async def config_error(self, ctx, error):
-        """"""
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.trigger_typing()
-            missing_perm = error.missing_perms[0].replace('_', ' ')
-            embed = self.bot.embed_template(title=utils.trans('command-required-perm', missing_perm), color=0xFF0000)
-            await ctx.message.reply(embed=embed)
-
-        if isinstance(error, commands.UserInputError):
-            await ctx.trigger_typing()
-            embed = self.bot.embed_template(description='**' + str(error) + '**', color=0xFF0000)
-            await ctx.message.reply(embed=embed)
+        await models.Match.delete_match(match_mdl.id)

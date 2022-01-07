@@ -4,7 +4,7 @@ from discord.ext import commands
 from steam.steamid import SteamID, from_url
 
 from .utils import utils
-from .utils.db import DB
+from .. import models
 
 
 class LinkCog(commands.Cog):
@@ -15,7 +15,7 @@ class LinkCog(commands.Cog):
 
     @commands.command(brief=utils.trans('link-command-brief'),
                       usage='link <steam_id> {OPTIONAL flag_emoji}')
-    @utils.is_guild_setup()
+    @models.Guild.is_guild_setup()
     async def link(self, ctx, steam_id=None, flag='🇺🇸'):
         """"""
         user = ctx.author
@@ -23,19 +23,13 @@ class LinkCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        banned_users = await DB.get_banned_users(ctx.guild.id)
-
+        banned_users = await models.Guild.get_banned_users(ctx.guild.id)
         if user.id in banned_users:
             raise commands.UserInputError(message=utils.trans('no-access-for-ban'))
 
-        user_data = await DB.fetch_row(
-            "SELECT * FROM users\n"
-            f"    WHERE discord_id = {user.id};"
-        )
-
-        if user_data:
-            db_user = utils.User.from_dict(user_data, ctx.guild)
-            raise commands.UserInputError(message=utils.trans('account-already-linked', db_user.steam))
+        user_mdl = await models.User.get_user(user.id, ctx.guild)
+        if user_mdl:
+            raise commands.UserInputError(message=utils.trans('account-already-linked', user_mdl.steam))
 
         try:
             steam = SteamID(steam_id)
@@ -53,30 +47,19 @@ class LinkCog(commands.Cog):
             raise commands.UserInputError(message=utils.trans('invalid-flag-emoji'))
 
         try:
-            await DB.query(
-                "INSERT INTO users (discord_id, steam_id, flag)\n"
-                f"    VALUES({user.id}, '{steam}', '{flag}')\n"
-                "    ON CONFLICT DO NOTHING\n"
-                "    RETURNING discord_id;"
-            )
-        except Exception as e:
-            print(e)
+            await models.User.insert_user(user.id, steam, flag)
+        except:
             raise commands.UserInputError(message=utils.trans('steam-linked-to-another-user'))
 
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
-
-        await user.add_roles(db_guild.linked_role)
+        guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
+        await user.add_roles(guild_mdl.linked_role)
         embed = self.bot.embed_template(description=utils.trans('link-steam-success', user.mention, steam))
         await ctx.message.reply(embed=embed)
 
     @commands.command(brief=utils.trans('command-unlink-brief'),
                       usage='unlink <mention>')
     @commands.has_permissions(ban_members=True)
-    @utils.is_guild_setup()
+    @models.Guild.is_guild_setup()
     async def unlink(self, ctx):
         """"""
         try:
@@ -85,39 +68,13 @@ class LinkCog(commands.Cog):
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
-        user_data = await DB.fetch_row(
-            "SELECT * FROM users\n"
-            f"    WHERE discord_id = {user.id};"
-        )
-        if not user_data:
+        user_mdl = await models.User.get_user(user.id, ctx.guild)
+        if not user_mdl:
             raise commands.UserInputError(message=utils.trans('unable-to-unlink', user.mention))
 
-        await DB.query(
-            "DELETE FROM users\n"
-            f"    WHERE discord_id = {user.id};"
-        )
-
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id = {ctx.guild.id};"
-        )
-        db_guild = utils.Guild.from_dict(self.bot, guild_data)
-
-        await user.remove_roles(db_guild.linked_role)
+        await models.User.delete_user(user.id)
+    
+        guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
+        await user.remove_roles(guild_mdl.linked_role)
         embed = self.bot.embed_template(description=utils.trans('unlink-steam-success', user.mention))
         await ctx.message.reply(embed=embed)
-
-    @link.error
-    @unlink.error
-    async def config_error(self, ctx, error):
-        """"""
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.trigger_typing()
-            missing_perm = error.missing_perms[0].replace('_', ' ')
-            embed = self.bot.embed_template(title=utils.trans('command-required-perm', missing_perm), color=0xFF0000)
-            await ctx.message.reply(embed=embed)
-
-        if isinstance(error, commands.UserInputError):
-            await ctx.trigger_typing()
-            embed = self.bot.embed_template(description='**' + str(error) + '**', color=0xFF0000)
-            await ctx.message.reply(embed=embed)
