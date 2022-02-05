@@ -1,19 +1,13 @@
 # utils.py
 
 import os
-import re
 import json
 import math
-from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 import discord
-from discord.ext import commands
-from bot.cogs.utils.db import DB
 from bot.resources import Config
 
-
-time_arg_pattern = re.compile(r'\b((?:(?P<days>[0-9]+)d)|(?:(?P<hours>[0-9]+)h)|(?:(?P<minutes>[0-9]+)m))\b')
 
 FLAG_CODES = {
     '🇩🇿': 'DZ', '🇦🇷': 'AR', '🇦🇺': 'AU', '🇦🇹': 'AT', '🇦🇿': 'AZ', '🇧🇪': 'BE', '🇧🇷': 'BR',
@@ -56,229 +50,20 @@ class Map:
         self.emoji = emoji
 
 
-class Guild:
-    """"""
-    def __init__(
-        self,
-        guild,
-        auth,
-        linked_role,
-        prematch_channel,
-        category,
-        lobbies_channel,
-    ):
-        """"""
-        self.guild = guild
-        self.auth = auth
-        self.linked_role = linked_role
-        self.prematch_channel = prematch_channel
-        self.category = category
-        self.lobbies_channel = lobbies_channel
-        self.is_setup = any(auth.values()) and linked_role and prematch_channel
-
-    @classmethod
-    def from_dict(cls, bot, guild_data: dict):
-        """"""
-        guild = bot.get_guild(guild_data['id'])
-
-        return cls(
-            guild,
-            {'user-api': guild_data['api_key']},
-            guild.get_role(guild_data['linked_role']),
-            guild.get_channel(guild_data['prematch_channel']),
-            guild.get_channel(guild_data['category']),
-            guild.get_channel(guild_data['lobbies_channel']),
-        )
-
-
-class Lobby:
-    """"""
-    def __init__(
-        self,
-        lobby_id,
-        guild,
-        name,
-        region,
-        capacity,
-        series,
-        channel,
-        message,
-        category,
-        queue_channel,
-        lobby_channel,
-        last_message,
-        team_method,
-        captain_method,
-        mpool
-    ):
-        """"""
-        self.id = lobby_id
-        self.guild = guild
-        self.name = name
-        self.region = region
-        self.capacity = capacity
-        self.series = series
-        self.channel = channel
-        self.message = message
-        self.category = category
-        self.queue_channel = queue_channel
-        self.lobby_channel = lobby_channel
-        self.last_message = last_message
-        self.team_method = team_method
-        self.captain_method = captain_method
-        self.mpool = mpool
-
-    @classmethod
-    def from_dict(cls, bot, lobby_data: dict):
-        """"""
-        guild = bot.get_guild(lobby_data['guild'])
-        channel = guild.get_channel(lobby_data['channel'])
-        category = guild.get_channel(lobby_data['category'])
-        queue_channel = guild.get_channel(lobby_data['queue_channel'])
-        lobby_channel = guild.get_channel(lobby_data['lobby_channel'])
-        try:
-            last_message = queue_channel.get_partial_message(lobby_data['last_message'])
-        except AttributeError:
-            last_message = None
-        try:
-            message = channel.get_partial_message(lobby_data['message'])
-        except AttributeError:
-            message = None
-
-        return cls(
-            lobby_data['id'],
-            guild,
-            lobby_data['name'],
-            lobby_data['region'],
-            lobby_data['capacity'],
-            lobby_data['series_type'],
-            channel,
-            message,
-            category,
-            queue_channel,
-            lobby_channel,
-            last_message,
-            lobby_data['team_method'],
-            lobby_data['captain_method'],
-            [m for m in bot.all_maps.values() if lobby_data[m.dev_name]]
-        )
-
-
-class Match:
-    """"""
-    def __init__(
-        self,
-        match_id,
-        guild,
-        channel,
-        message,
-        category,
-        team1_channel,
-        team2_channel
-    ):
-        """"""
-        self.id = match_id
-        self.guild = guild
-        self.channel = channel
-        self.message = message
-        self.category = category
-        self.team1_channel = team1_channel
-        self.team2_channel = team2_channel
-
-    @classmethod
-    def from_dict(cls, bot, match_data: dict):
-        """"""
-        guild = bot.get_guild(match_data['guild'])
-        channel = guild.get_channel(match_data['channel'])
-
-        try:
-            message = channel.get_partial_message(match_data['message'])
-        except AttributeError:
-            message = None
-
-        return cls(
-            match_data['id'],
-            guild,
-            channel,
-            message,
-            guild.get_channel(match_data['category']),
-            guild.get_channel(match_data['team1_channel']),
-            guild.get_channel(match_data['team2_channel'])
-        )
-
-
-class User:
-    """"""
-    def __init__(
-        self,
-        discord,
-        steam,
-        flag
-    ):
-        """"""
-        self.discord = discord
-        self.steam = steam
-        self.flag = flag
-
-    @classmethod
-    def from_dict(cls, user_data: dict, guild):
-        """"""
-        return cls(
-            guild.get_member(user_data['discord_id']),
-            user_data['steam_id'],
-            user_data['flag']
-        )
-
-
 def trans(text, *args):
-    lang = os.environ['DISCORD_BOT_LANGUAGE']
-    trans_text = ''
+    """"""
     if args:
         try:
-            trans_text = translations[lang][text].format(*args)
+            trans_text = translations[Config.lang][text].format(*args)
         except (KeyError, ValueError):
             trans_text = translations['en'][text].format(*args)
     else:
         try:
-            trans_text = translations[lang][text].replace('{}', '')
+            trans_text = translations[Config.lang][text].replace('{}', '')
         except (KeyError, ValueError):
             trans_text = translations['en'][text].replace('{}', '')
 
     return trans_text
-
-
-def timedelta_str(tdelta):
-    """ Convert time delta object to a worded string representation with only days, hours and minutes. """
-    conversions = (('days', 86400), ('hours', 3600), ('minutes', 60))
-    secs_left = int(tdelta.total_seconds())
-    unit_strings = []
-
-    for unit, conversion in conversions:
-        unit_val, secs_left = divmod(secs_left, conversion)
-
-        if unit_val != 0 or (unit == 'minutes' and len(unit_strings) == 0):
-            unit_strings.append(f'{unit_val} {unit}')
-
-    return ', '.join(unit_strings)
-
-
-def unbantime(arg):
-    # Parse the time arguments
-    time_units = ('days', 'hours', 'minutes')
-    time_delta_values = {}  # Holds the values for each time unit arg
-
-    for match in time_arg_pattern.finditer(arg):  # Iterate over the time argument matches
-        for time_unit in time_units:  # Figure out which time unit this match is for
-            time_value = match.group(time_unit)  # Get the value for this unit
-
-            if time_value is not None:  # Check if there is an actual group value
-                time_delta_values[time_unit] = int(time_value)
-                break  # There is only ever one group value per match
-
-    # Set unban time if there were time arguments
-    time_delta = timedelta(**time_delta_values)
-    unban_time = None if time_delta_values == {} else datetime.now(timezone.utc) + time_delta
-    return time_delta, unban_time
 
 
 def align_text(text, length, align='center'):
@@ -342,21 +127,3 @@ async def create_emojis(bot):
                 map_dev,
                 f'<:{map_dev}:{emoji.id}>'
             )
-
-
-def is_guild_setup():
-    async def predicate(ctx):
-        guild_data = await DB.fetch_row(
-            "SELECT * FROM guilds\n"
-            f"    WHERE id =  {ctx.guild.id};"
-        )
-        db_guild = Guild.from_dict(ctx.bot, guild_data)
-
-        if not db_guild.is_setup:
-            title = trans('bot-not-setup', ctx.bot.command_prefix[0])
-            embed = ctx.bot.embed_template(title=title, color=0xFF0000)
-            await ctx.message.reply(embed=embed)
-            return False
-        return True
-    
-    return commands.check(predicate)

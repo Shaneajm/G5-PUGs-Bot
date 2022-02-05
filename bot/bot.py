@@ -2,6 +2,7 @@
 
 import discord
 from discord.ext import commands
+from pretty_help import PrettyHelp
 
 from aiohttp import ClientSession, ClientTimeout
 
@@ -9,6 +10,7 @@ import json
 import sys
 import os
 import logging
+import Levenshtein as lev
 
 from . import cogs
 from .cogs.utils import utils
@@ -30,7 +32,8 @@ class G5Bot(commands.AutoShardedBot):
             intents_attrs = json.load(f)
 
         intents = discord.Intents(**intents_attrs)
-        super().__init__(command_prefix=Config.prefixes, case_insensitive=True, intents=intents)
+        help_menu = PrettyHelp(sort_commands=False)
+        super().__init__(command_prefix=Config.prefixes, help_command=help_menu, case_insensitive=True, intents=intents)
 
         # Set argument attributes
         self.all_maps = {}
@@ -79,26 +82,16 @@ class G5Bot(commands.AutoShardedBot):
     @commands.Cog.listener()
     async def on_ready(self):
         """ Synchronize the guilds the bot is in with the guilds table. """
-        lobby_cog = self.get_cog('LobbyCog')
-        match_cog = self.get_cog('MatchCog')
+        lobby_cog = self.get_cog('Lobby Category')
+        match_cog = self.get_cog('Match Category')
 
         if self.guilds:
             await DB.sync_guilds(*(guild.id for guild in self.guilds))
             self.logger.info('Checking maps emojis...')
             await utils.create_emojis(self)
 
-            for index, guild in enumerate(self.guilds, start=1):
-                self.logger.info(f'Preparing server: {index}. {guild.name}')
-
-                try:
-                    await lobby_cog.setup_lobbies(guild)
-                except Exception as e:
-                    print(e)
-
             if not match_cog.check_matches.is_running():
                 match_cog.check_matches.start()
-            if not lobby_cog.check_unbans.is_running():
-                lobby_cog.check_unbans.start()
             
             self.logger.info('Bot is ready now!')
 
@@ -106,17 +99,46 @@ class G5Bot(commands.AutoShardedBot):
     async def on_guild_join(self, guild):
         """ Insert the newly added guild to the guilds table. """
         await DB.sync_guilds(*(guild.id for guild in self.guilds))
-        lobby_cog = self.get_cog('LobbyCog')
-
-        try:
-            await lobby_cog.setup_lobbies(guild)
-        except Exception as e:
-            print(e)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         """ Delete the recently removed guild from the guilds table. """
         await DB.sync_guilds(*(guild.id for guild in self.guilds))
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        """"""
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.trigger_typing()
+            missing_perm = error.missing_perms[0].replace('_', ' ')
+            embed = self.embed_template(title=utils.trans('command-required-perm', missing_perm), color=0xFF0000)
+            await ctx.message.reply(embed=embed)
+
+        if isinstance(error, commands.UserInputError):
+            await ctx.trigger_typing()
+            embed = self.embed_template(description='**' + str(error) + '**', color=0xFF0000)
+            await ctx.message.reply(embed=embed)
+
+        if isinstance(error, commands.CommandNotFound):
+            # Get Levenshtein distance from commands
+            in_cmd = ctx.invoked_with
+            bot_cmds = list(self.commands)
+            lev_dists = [lev.distance(in_cmd, str(cmd)) / max(len(in_cmd), len(str(cmd))) for cmd in bot_cmds]
+            lev_min = min(lev_dists)
+
+            # Prep help message title
+            embed_title = utils.trans('help-not-valid', ctx.message.content)
+            prefixes = self.command_prefix
+            prefix = prefixes[0] if prefixes is not str else prefixes  # Prefix can be string or iterable of strings
+
+            # Make suggestion if lowest Levenshtein distance is under threshold
+            if lev_min <= 0.5:
+                embed_title += utils.trans('help-did-you-mean') + f' `{prefix}{bot_cmds[lev_dists.index(lev_min)]}`?'
+            else:
+                embed_title += utils.trans('help-use-help', prefix)
+
+            embed = self.embed_template(title=embed_title)
+            await ctx.message.reply(embed=embed)
 
     def run(self):
         """ Override parent run to automatically include Discord token. """

@@ -3,10 +3,10 @@
 from discord.ext import commands
 
 from .utils import utils, api
-from .utils.db import DB
+from .. import models
 
 
-class StatsCog(commands.Cog):
+class StatsCog(commands.Cog, name='Stats Category', description=utils.trans('stats-desc')):
     """"""
 
     def __init__(self, bot):
@@ -16,18 +16,14 @@ class StatsCog(commands.Cog):
                       aliases=['rank'])
     async def stats(self, ctx):
         """"""
-        user_data = await DB.fetch_row(
-            "SELECT * FROM users\n"
-            f"    WHERE discord_id = {ctx.author.id};"
-        )
+        user_mdl = await models.User.get_user(ctx.author.id, ctx.guild)
 
-        if not user_data:
+        if not user_mdl:
             msg = utils.trans('stats-not-linked', ctx.author.display_name)
             raise commands.UserInputError(message=msg)
 
-        db_user = utils.User.from_dict(user_data, ctx.guild)
         try:
-            stats = await api.PlayerStats.get_player_stats(db_user)
+            stats = await api.PlayerStats.get_player_stats(user_mdl)
         except Exception as e:
             raise commands.UserInputError(message=str(e))
 
@@ -89,18 +85,3 @@ class StatsCog(commands.Cog):
         title = f'__{utils.trans("leaderboard")}__'
         embed = self.bot.embed_template(title=title, description=description)
         await ctx.message.reply(embed=embed)
-
-    @stats.error
-    @leaders.error
-    async def config_error(self, ctx, error):
-        """"""
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.trigger_typing()
-            missing_perm = error.missing_perms[0].replace('_', ' ')
-            embed = self.bot.embed_template(title=utils.trans('command-required-perm', missing_perm), color=0xFF0000)
-            await ctx.message.reply(embed=embed)
-
-        if isinstance(error, commands.UserInputError):
-            await ctx.trigger_typing()
-            embed = self.bot.embed_template(description='**' + str(error) + '**', color=0xFF0000)
-            await ctx.message.reply(embed=embed)

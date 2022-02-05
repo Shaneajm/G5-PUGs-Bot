@@ -17,4 +17,3 @@ class Config:
     game_mode_wing_value: int
     get5_comp_cfg: str
     get5_wing_cfg: str
-
