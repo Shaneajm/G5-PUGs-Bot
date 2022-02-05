@@ -6,7 +6,7 @@ from .utils import utils, api
 from .. import models
 
 
-class StatsCog(commands.Cog):
+class StatsCog(commands.Cog, name='Stats Category', description=utils.trans('stats-desc')):
     """"""
 
     def __init__(self, bot):

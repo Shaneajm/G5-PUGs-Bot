@@ -92,8 +92,8 @@ class LoggingCog(commands.Cog):
         prefix = self.bot.command_prefix
         prefix = prefix[0] if prefix is not str else prefix
         activity = discord.Activity(
-            type=discord.ActivityType.watching,
-            name=f'{len(self.bot.guilds)} servers | {prefix}info'
+            type=discord.ActivityType.playing,
+            name=f'in {len(self.bot.guilds)} servers | Type {prefix}info to startup'
         )
         await self.bot.change_presence(activity=activity)
 
@@ -119,7 +119,7 @@ class LoggingCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        msg = f'Bot is ready to use in {len(self.bot.guilds)} Discord servers:\n'
+        msg = f'Bot is ready to use in {len(self.bot.guilds)} Discord servers.'
         log_lines(logging.INFO, msg)
         await self.update_status()
 

@@ -7,7 +7,7 @@ from .utils import utils
 from .. import models
 
 
-class LinkCog(commands.Cog):
+class LinkCog(commands.Cog, name='Link Category', description=utils.trans('link-desc')):
     """"""
     def __init__(self, bot):
         """"""
@@ -22,10 +22,6 @@ class LinkCog(commands.Cog):
         if not steam_id:
             msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
-
-        banned_users = await models.Guild.get_banned_users(ctx.guild.id)
-        if user.id in banned_users:
-            raise commands.UserInputError(message=utils.trans('no-access-for-ban'))
 
         user_mdl = await models.User.get_user(user.id, ctx.guild)
         if user_mdl:

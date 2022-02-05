@@ -8,14 +8,13 @@ from discord.ext import commands
 
 class Guild:
     """"""
-    def __init__(self, guild, auth, linked_role, prematch_channel, category, lobbies_channel):
+    def __init__(self, guild, auth, linked_role, prematch_channel, category):
         """"""
         self.guild = guild
         self.auth = auth
         self.linked_role = linked_role
         self.prematch_channel = prematch_channel
         self.category = category
-        self.lobbies_channel = lobbies_channel
         self.is_setup = any(auth.values()) and linked_role and prematch_channel
 
     @classmethod
@@ -27,8 +26,7 @@ class Guild:
             {'user-api': guild_data['api_key']},
             guild.get_role(guild_data['linked_role']),
             guild.get_channel(guild_data['prematch_channel']),
-            guild.get_channel(guild_data['category']),
-            guild.get_channel(guild_data['lobbies_channel']),
+            guild.get_channel(guild_data['category'])
         )
 
     @staticmethod
@@ -56,36 +54,6 @@ class Guild:
                 f'    SET {col_vals}\n' \
                 f'    WHERE id = {guild_id};'
         await DB.query(sql)
-
-    @staticmethod
-    async def get_banned_users(guild_id: int):
-        """"""
-        return await DB.get_banned_users(guild_id)
-    
-    @staticmethod
-    async def insert_banned_user(guild_id: int, user_id: int, unban_time: str):
-        """"""
-        sql = "INSERT INTO banned_users (guild_id, user_id, unban_time)\n" \
-              f"    VALUES({guild_id}, {user_id}, '{unban_time}')\n" \
-              "    ON CONFLICT (guild_id, user_id) DO UPDATE\n" \
-              "    SET unban_time = EXCLUDED.unban_time;"
-        await DB.query(sql)
-
-    @staticmethod
-    async def delete_banned_users(guild_id: int, user_ids: List[int]) -> List[int]:
-        """"""
-        sql = "DELETE FROM banned_users\n" \
-              f"    WHERE guild_id = {guild_id} AND user_id::BIGINT = ANY(ARRAY{user_ids}::BIGINT[])\n" \
-              "    RETURNING user_id;"
-        return await DB.query(sql, ret_key='user_id')
-
-    @staticmethod
-    async def get_unbanned_users(guild_id: int):
-        """"""
-        sql = "DELETE FROM banned_users\n" \
-              f"    WHERE guild_id = {guild_id} AND CURRENT_TIMESTAMP > unban_time\n" \
-              "    RETURNING user_id;",
-        return await DB.query(sql, ret_key='user_id')
 
     def is_guild_setup():
         async def predicate(ctx):

@@ -55,7 +55,7 @@ class DB:
     @classmethod
     async def sync_guilds(cls, *guild_ids):
         """"""
-        insert_rows = [tuple([guild_id] + [None] * 5) for guild_id in guild_ids]
+        insert_rows = [tuple([guild_id] + [None] * 4) for guild_id in guild_ids]
 
         insert_statement = (
             'INSERT INTO guilds (id)\n'
@@ -89,20 +89,6 @@ class DB:
                 users = await connection.fetch(statement, user_ids)
 
         return [{col: val for col, val in user.items()} for user in users] 
-
-    @classmethod
-    async def get_banned_users(cls, guild_id):
-        """"""
-        select_statement = (
-            'SELECT * FROM banned_users\n'
-            '    WHERE guild_id = $1;'
-        )
-
-        async with cls.pool.acquire() as connection:
-            async with connection.transaction():
-                guild = await connection.fetch(select_statement, guild_id)
-
-        return dict(zip(cls._get_record_attrs(guild, 'user_id'), cls._get_record_attrs(guild, 'unban_time')))
 
     @classmethod
     async def insert_match_users(cls, match_id, *user_ids):

@@ -1,17 +1,13 @@
 # utils.py
 
 import os
-import re
 import json
 import math
-from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 import discord
 from bot.resources import Config
 
-
-time_arg_pattern = re.compile(r'\b((?:(?P<days>[0-9]+)d)|(?:(?P<hours>[0-9]+)h)|(?:(?P<minutes>[0-9]+)m))\b')
 
 FLAG_CODES = {
     '🇩🇿': 'DZ', '🇦🇷': 'AR', '🇦🇺': 'AU', '🇦🇹': 'AT', '🇦🇿': 'AZ', '🇧🇪': 'BE', '🇧🇷': 'BR',
@@ -55,54 +51,19 @@ class Map:
 
 
 def trans(text, *args):
-    lang = os.environ['DISCORD_BOT_LANGUAGE']
-    trans_text = ''
+    """"""
     if args:
         try:
-            trans_text = translations[lang][text].format(*args)
+            trans_text = translations[Config.lang][text].format(*args)
         except (KeyError, ValueError):
             trans_text = translations['en'][text].format(*args)
     else:
         try:
-            trans_text = translations[lang][text].replace('{}', '')
+            trans_text = translations[Config.lang][text].replace('{}', '')
         except (KeyError, ValueError):
             trans_text = translations['en'][text].replace('{}', '')
 
     return trans_text
-
-
-def timedelta_str(tdelta):
-    """ Convert time delta object to a worded string representation with only days, hours and minutes. """
-    conversions = (('days', 86400), ('hours', 3600), ('minutes', 60))
-    secs_left = int(tdelta.total_seconds())
-    unit_strings = []
-
-    for unit, conversion in conversions:
-        unit_val, secs_left = divmod(secs_left, conversion)
-
-        if unit_val != 0 or (unit == 'minutes' and len(unit_strings) == 0):
-            unit_strings.append(f'{unit_val} {unit}')
-
-    return ', '.join(unit_strings)
-
-
-def unbantime(arg):
-    # Parse the time arguments
-    time_units = ('days', 'hours', 'minutes')
-    time_delta_values = {}  # Holds the values for each time unit arg
-
-    for match in time_arg_pattern.finditer(arg):  # Iterate over the time argument matches
-        for time_unit in time_units:  # Figure out which time unit this match is for
-            time_value = match.group(time_unit)  # Get the value for this unit
-
-            if time_value is not None:  # Check if there is an actual group value
-                time_delta_values[time_unit] = int(time_value)
-                break  # There is only ever one group value per match
-
-    # Set unban time if there were time arguments
-    time_delta = timedelta(**time_delta_values)
-    unban_time = None if time_delta_values == {} else datetime.now(timezone.utc) + time_delta
-    return time_delta, unban_time
 
 
 def align_text(text, length, align='center'):

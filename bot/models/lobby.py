@@ -6,7 +6,7 @@ from ..cogs.utils.db import DB
 
 class Lobby:
     """"""
-    def __init__(self, lobby_id, guild, name, region, capacity, series, channel, message, category,
+    def __init__(self, lobby_id, guild, name, region, capacity, series, category,
                  queue_channel, lobby_channel, last_message, team_method, captain_method, mpool):
         """"""
         self.id = lobby_id
@@ -15,8 +15,6 @@ class Lobby:
         self.region = region
         self.capacity = capacity
         self.series = series
-        self.channel = channel
-        self.message = message
         self.category = category
         self.queue_channel = queue_channel
         self.lobby_channel = lobby_channel
@@ -29,7 +27,6 @@ class Lobby:
     def from_dict(cls, bot, lobby_data: dict):
         """"""
         guild = bot.get_guild(lobby_data['guild'])
-        channel = guild.get_channel(lobby_data['channel'])
         category = guild.get_channel(lobby_data['category'])
         queue_channel = guild.get_channel(lobby_data['queue_channel'])
         lobby_channel = guild.get_channel(lobby_data['lobby_channel'])
@@ -37,10 +34,6 @@ class Lobby:
             last_message = queue_channel.get_partial_message(lobby_data['last_message'])
         except AttributeError:
             last_message = None
-        try:
-            message = channel.get_partial_message(lobby_data['message'])
-        except AttributeError:
-            message = None
 
         return cls(
             lobby_data['id'],
@@ -49,8 +42,6 @@ class Lobby:
             lobby_data['region'],
             lobby_data['capacity'],
             lobby_data['series_type'],
-            channel,
-            message,
             category,
             queue_channel,
             lobby_channel,

@@ -1,15 +1,26 @@
 # setup.py
 
 from discord.ext import commands
+
+from bot.resources import Config
 from .utils import utils, api
 from .. import models
 
 
-class SetupCog(commands.Cog):
+class SetupCog(commands.Cog, name='Setup Category', description=utils.trans('setup-desc')):
     """"""
     def __init__(self, bot):
         """"""
         self.bot = bot
+
+    @commands.command(brief=utils.trans('help-info-brief'))
+    async def info(self, ctx):
+        """ Display the info embed. """
+        description = utils.trans("help-bot-description", Config.web_panel,
+                                  self.bot.command_prefix[0], self.bot.command_prefix[0])
+        embed = self.bot.embed_template(title='__G5 Bot__', description=description)
+        embed.set_thumbnail(url=self.bot.logo)
+        await ctx.message.reply(embed=embed)
 
     @commands.command(brief=utils.trans('command-setup-brief'),
                       usage='setup <API Key>')
@@ -46,12 +57,6 @@ class SetupCog(commands.Cog):
             'prematch_channel': prematch_channel.id
         }
         await models.Guild.update_guild(ctx.guild.id, dict_data)
-
-        lobby_cog = self.bot.get_cog('LobbyCog')
-        try:
-            await lobby_cog.setup_lobbies(ctx.guild)
-        except Exception as e:
-            print(e)
 
         msg = utils.trans('setup-bot-success')
         embed = self.bot.embed_template(title=msg)

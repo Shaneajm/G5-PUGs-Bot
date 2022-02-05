@@ -27,7 +27,6 @@ steps = [
             '    linked_role BIGINT DEFAULT NULL,\n'
             '    prematch_channel BIGINT DEFAULT NULL,\n'
             '    category BIGINT DEFAULT NULL,\n'
-            '    lobbies_channel BIGINT DEFAULT NULL\n'
             ');'
         ),
         'DROP TABLE guilds;'
@@ -43,8 +42,6 @@ steps = [
             '    series_type series_type DEFAULT \'bo1\',\n'
             '    team_method team_method DEFAULT \'captains\',\n'
             '    captain_method captain_method DEFAULT \'volunteer\',\n'
-            '    channel BIGINT DEFAULT NULL,\n'
-            '    message BIGINT DEFAULT NULL,\n'
             '    category BIGINT DEFAULT NULL,\n'
             '    queue_channel BIGINT DEFAULT NULL,\n'
             '    lobby_channel BIGINT DEFAULT NULL,\n'
