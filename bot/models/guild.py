@@ -8,6 +8,7 @@ from discord.ext import commands
 
 class Guild:
     """"""
+
     def __init__(self, guild, auth, linked_role, prematch_channel, category):
         """"""
         self.guild = guild
@@ -38,7 +39,7 @@ class Guild:
             guild_data = await DB.fetch_row(sql)
             if guild_data:
                 return Guild.from_dict(bot, guild_data)
-        except:
+        except Exception:
             pass
 
     @staticmethod
@@ -49,10 +50,11 @@ class Guild:
     @staticmethod
     async def update_guild(guild_id: int, data: dict):
         """"""
-        col_vals = ",\n    ".join(f"{key} = {val}" for key, val in data.items())
+        col_vals = ",\n    ".join(
+            f"{key} = {val}" for key, val in data.items())
         sql = 'UPDATE guilds\n' \
-                f'    SET {col_vals}\n' \
-                f'    WHERE id = {guild_id};'
+            f'    SET {col_vals}\n' \
+            f'    WHERE id = {guild_id};'
         await DB.query(sql)
 
     def is_guild_setup():
@@ -64,5 +66,5 @@ class Guild:
                 await ctx.message.reply(embed=embed)
                 return False
             return True
-        
+
         return commands.check(predicate)

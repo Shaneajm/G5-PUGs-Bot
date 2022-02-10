@@ -7,6 +7,7 @@ from ..cogs.utils.db import DB
 
 class User:
     """"""
+
     def __init__(self, discord, steam, flag):
         """"""
         self.discord = discord
@@ -31,7 +32,7 @@ class User:
             user_data = await DB.fetch_row(sql)
             if user_data:
                 return User.from_dict(user_data, guild)
-        except:
+        except Exception:
             pass
 
     @staticmethod
@@ -44,7 +45,7 @@ class User:
     async def get_user_by_steam(steam_id: str, guild: Guild):
         """"""
         sql = "SELECT * FROM users\n" \
-                f"    WHERE steam_id = '{steam_id}';"
+            f"    WHERE steam_id = '{steam_id}';"
         user_data = await DB.fetch_row(sql)
         if user_data:
             return User.from_dict(user_data, guild)
@@ -53,9 +54,9 @@ class User:
     async def insert_user(discord_id: int, steam_id: str, flag: str):
         """"""
         sql = "INSERT INTO users (discord_id, steam_id, flag)\n" \
-                f"    VALUES({discord_id}, '{steam_id}', '{flag}')\n" \
-                "    ON CONFLICT DO NOTHING\n" \
-                "    RETURNING discord_id;"
+            f"    VALUES({discord_id}, '{steam_id}', '{flag}')\n" \
+            "    ON CONFLICT DO NOTHING\n" \
+            "    RETURNING discord_id;"
         await DB.query(sql)
 
     @staticmethod

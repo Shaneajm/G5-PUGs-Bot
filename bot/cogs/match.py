@@ -16,6 +16,7 @@ import asyncio
 
 class MatchCog(commands.Cog, name='Match Category', description=utils.trans('match-desc')):
     """"""
+
     def __init__(self, bot):
         """"""
         self.bot = bot
@@ -30,7 +31,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
         try:
             match_id = int(match_id)
         except (TypeError, ValueError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
@@ -39,6 +41,13 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
             await api.Matches.cancel_match(match_id, guild_mdl.auth)
         except Exception as e:
             raise commands.UserInputError(message=str(e))
+
+        try:
+            await self.update_match(match_id)
+        except Exception as e:
+            traceback.print_exception(type(e), e, e.__traceback__)
+            self.bot.logger.error(
+                f'caught error when calling update_match({match_id}): {e}')
 
         title = utils.trans('command-end-success', match_id)
         embed = self.bot.embed_template(title=title)
@@ -51,14 +60,16 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
     async def add(self, ctx, match_id=None, team=None):
         """"""
         if team not in ['team1', 'team2', 'spec']:
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         try:
             match_id = int(match_id)
             user = ctx.message.mentions[0]
         except (TypeError, ValueError, IndexError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         user_mdl = await models.User.get_user(user.id, ctx.guild)
@@ -82,13 +93,13 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
             await match_mdl.team1_channel.set_permissions(user, connect=True)
             try:
                 await user.move_to(match_mdl.team1_channel)
-            except:
+            except Exception:
                 pass
         elif team == 'team2':
             await match_mdl.team2_channel.set_permissions(user, connect=True)
             try:
                 await user.move_to(match_mdl.team2_channel)
-            except:
+            except Exception:
                 pass
 
         msg = utils.trans('command-add-success', user.mention, match_id)
@@ -105,7 +116,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
             match_id = int(match_id)
             user = ctx.message.mentions[0]
         except (TypeError, ValueError, IndexError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         user_mdl = await models.User.get_user(user.id, ctx.guild)
@@ -128,7 +140,7 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
         await match_mdl.team2_channel.set_permissions(user, connect=False)
         try:
             await user.move_to(guild_mdl.prematch_channel)
-        except:
+        except Exception:
             pass
 
         msg = utils.trans('command-remove-success', user.mention, match_id)
@@ -142,7 +154,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
     async def pause(self, ctx, match_id=None):
         """"""
         if not match_id:
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
@@ -163,7 +176,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
     async def unpause(self, ctx, match_id=None):
         """"""
         if not match_id:
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
@@ -171,7 +185,7 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
         try:
             await api.Matches.unpause_match(match_id, guild_mdl.auth)
         except Exception as e:
-            raise commands.UserInputError(message=str(e))        
+            raise commands.UserInputError(message=str(e))
 
         msg = utils.trans('command-unpause-success', match_id)
         embed = self.bot.embed_template(description=msg)
@@ -237,12 +251,13 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
                 team_one, team_two = await self.autobalance_teams(users)
             else:  # team_method is random
                 team_one, team_two = self.randomize_teams(users)
-            
+
             team1_name = team_one[0].display_name
             team2_name = team_two[0].display_name
 
             description = '⌛️ 1. ' + utils.trans('creating-teams')
-            embed = self.bot.embed_template(title=title, description=description)
+            embed = self.bot.embed_template(
+                title=title, description=description)
             await message.edit(content='', embed=embed)
             team1_id = await api.Teams.create_team(team1_name, team_one, guild_mdl.auth)
             team2_id = await api.Teams.create_team(team2_name, team_two, guild_mdl.auth)
@@ -250,7 +265,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
 
             description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
                           '⌛️ 2. ' + utils.trans('pick-maps')
-            embed = self.bot.embed_template(title=title, description=description)
+            embed = self.bot.embed_template(
+                title=title, description=description)
             await message.edit(content='', embed=embed)
             await asyncio.sleep(2)
 
@@ -260,7 +276,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
             description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
                           '✅ 2. ' + utils.trans('pick-maps') + '\n' \
                           '⌛️ 3. ' + utils.trans('find-servers')
-            embed = self.bot.embed_template(title=title, description=description)
+            embed = self.bot.embed_template(
+                title=title, description=description)
             await message.edit(embed=embed)
             await asyncio.sleep(2)
 
@@ -286,7 +303,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
                 description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
                               '✅ 2. ' + utils.trans('pick-maps') + '\n' \
                               '❌ 3. ' + utils.trans('find-servers')
-                embed = self.bot.embed_template(title=title, description=description)
+                embed = self.bot.embed_template(
+                    title=title, description=description)
                 await message.edit(embed=embed)
                 return False
 
@@ -297,7 +315,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
                           '✅ 3. ' + utils.trans('find-servers') + '\n' \
                           '⌛️ 4. ' + utils.trans('creating-match')
 
-            embed = self.bot.embed_template(title=title, description=description)
+            embed = self.bot.embed_template(
+                title=title, description=description)
             await message.edit(embed=embed)
             await asyncio.sleep(2)
 
@@ -317,7 +336,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
                           '✅ 3. ' + utils.trans('find-servers') + '\n' \
                           '✅ 4. ' + utils.trans('creating-match')
 
-            embed = self.bot.embed_template(title=title, description=description)
+            embed = self.bot.embed_template(
+                title=title, description=description)
             await message.edit(embed=embed)
             await asyncio.sleep(2)
 
@@ -326,7 +346,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
         except (discord.NotFound, ValueError):
             description = utils.trans('match-setup-cancelled')
         except Exception as e:
-            self.bot.logger.error(f'caught error when calling start_match(): {e}')
+            self.bot.logger.error(
+                f'caught error when calling start_match(): {e}')
             description = description.replace('⌛️', '❌')
             description += f'\n\n```{e}```'
         else:
@@ -356,35 +377,42 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
             }
 
             awaitables = [
-                models.Match.insert_match(dict_match, [user.id for user in team_one + team_two]),
+                models.Match.insert_match(
+                    dict_match, [user.id for user in team_one + team_two]),
                 team1_channel.set_permissions(guild.self_role, connect=True),
                 team2_channel.set_permissions(guild.self_role, connect=True),
-                team1_channel.set_permissions(guild.default_role, connect=False, read_messages=True),
-                team2_channel.set_permissions(guild.default_role, connect=False, read_messages=True)
+                team1_channel.set_permissions(
+                    guild.default_role, connect=False, read_messages=True),
+                team2_channel.set_permissions(
+                    guild.default_role, connect=False, read_messages=True)
             ]
 
             for team in [team_one, team_two]:
                 for user in team:
                     if user in team_one:
-                        awaitables.append(team1_channel.set_permissions(user, connect=True))
+                        awaitables.append(
+                            team1_channel.set_permissions(user, connect=True))
                         awaitables.append(user.move_to(team1_channel))
                     else:
-                        awaitables.append(team2_channel.set_permissions(user, connect=True))
+                        awaitables.append(
+                            team2_channel.set_permissions(user, connect=True))
                         awaitables.append(user.move_to(team2_channel))
-            
+
             await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
             connect_url = f'steam://connect/{match_server.ip_string}:{match_server.port}'
             connect_command = f'connect {match_server.ip_string}:{match_server.port}'
             title = f"🟢 {utils.trans('match-id', match_id)} --> **{team_one[0].display_name}**  vs  **{team_two[0].display_name}**"
             description = f'{utils.trans("match-server-info", connect_url, connect_command)}\n\n' \
-                           f'GOTV: steam://connect/{match_server.ip_string}:{match_server.gotv_port}\n\n'
+                f'GOTV: steam://connect/{match_server.ip_string}:{match_server.gotv_port}\n\n'
             description += f"{utils.trans('message-maps')}: {''.join(m.emoji for m in maps_list)}"
-            
-            burst_embed = self.bot.embed_template(title=title, description=description)
+
+            burst_embed = self.bot.embed_template(
+                title=title, description=description)
             for team in [team_one, team_two]:
                 team_name = f'__{team[0].display_name}__'
-                burst_embed.add_field(name=team_name, value='\n'.join(user.mention for user in team))
+                burst_embed.add_field(name=team_name, value='\n'.join(
+                    user.mention for user in team))
 
             burst_embed.set_footer(text=utils.trans('match-info-footer'))
 
@@ -419,7 +447,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
                     await self.update_match(match_id)
                 except Exception as e:
                     traceback.print_exception(type(e), e, e.__traceback__)
-                    self.bot.logger.error(f'caught error when calling update_match({match_id}): {e}')
+                    self.bot.logger.error(
+                        f'caught error when calling update_match({match_id}): {e}')
         else:
             self.check_matches.cancel()
 
@@ -452,10 +481,12 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
             title = '🟥  '
         else:
             title = '🔴  '
-        title += utils.trans('match-id', match_id) + f' --> **{api_match.team1_name}**  [{api_match.team1_score}:{api_match.team2_score}]  **{api_match.team2_name}**'
+        title += utils.trans('match-id', match_id) + \
+            f' --> **{api_match.team1_name}**  [{api_match.team1_score}:{api_match.team2_score}]  **{api_match.team2_name}**'
 
         for mapstat in api_mapstats:
-            start_time = datetime.fromisoformat(mapstat.start_time.replace("Z", "+00:00")).strftime("%Y-%m-%d  %H:%M:%S")
+            start_time = datetime.fromisoformat(mapstat.start_time.replace(
+                "Z", "+00:00")).strftime("%Y-%m-%d  %H:%M:%S")
             team1_match = []
             team2_match = []
 
@@ -472,7 +503,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
                            f"**{utils.trans('start-time')}:** {start_time}\n"
 
             if mapstat.end_time:
-                end_time = datetime.fromisoformat(mapstat.end_time.replace("Z", "+00:00")).strftime("%Y-%m-%d  %H:%M:%S")
+                end_time = datetime.fromisoformat(mapstat.end_time.replace(
+                    "Z", "+00:00")).strftime("%Y-%m-%d  %H:%M:%S")
                 description += f"**{utils.trans('end-time')}:** {end_time}\n"
 
             if team1_match and team2_match:
@@ -484,16 +516,22 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
                             ['Deaths'] + [f"{player.deaths}" for player in team],
                             ['KDR'] + [f"{0 if player.deaths == 0 else player.kills/player.deaths:.2f}" for player in team]]
 
-                    data[0] = [name if len(name) < 12 else name[:9] + '...' for name in data[0]]  # Shorten long names
+                    # Shorten long names
+                    data[0] = [name if len(
+                        name) < 12 else name[:9] + '...' for name in data[0]]
                     widths = list(map(lambda x: len(max(x, key=len)), data))
                     aligns = ['left', 'center', 'center', 'center', 'right']
                     z = zip(data, widths, aligns)
-                    formatted_data = [list(map(lambda x: utils.align_text(x, width, align), col)) for col, width, align in z]
-                    formatted_data = list(map(list, zip(*formatted_data)))  # Transpose list for .format() string
-                    description += '```ml\n    {}  {}  {}  {}  {}  \n'.format(*formatted_data[0])
+                    formatted_data = [list(map(lambda x: utils.align_text(
+                        x, width, align), col)) for col, width, align in z]
+                    # Transpose list for .format() string
+                    formatted_data = list(map(list, zip(*formatted_data)))
+                    description += '```ml\n    {}  {}  {}  {}  {}  \n'.format(
+                        *formatted_data[0])
 
                     for rank, player_row in enumerate(formatted_data[1:], start=1):
-                        description += ' {}. {}  {}  {}  {}  {}  \n'.format(rank, *player_row)
+                        description += ' {}. {}  {}  {}  {}  {}  \n'.format(
+                            rank, *player_row)
 
                     description += '```\n'
             description += '\n'
@@ -507,17 +545,18 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
         try:
             message = await match_mdl.message.fetch()
             await message.edit(embed=embed)
-        except Exception as e:
+        except Exception:
             try:
                 await match_mdl.channel.send(embed=embed)
             except Exception as e:
                 print(e)
                 pass
-        
+
         guild = guild_mdl.guild
 
         match_player_ids = await models.Match.get_match_users(match_id)
-        match_players = [guild.get_member(user_id) for user_id in match_player_ids]
+        match_players = [guild.get_member(user_id)
+                         for user_id in match_player_ids]
 
         awaitables = []
         for user in match_players:

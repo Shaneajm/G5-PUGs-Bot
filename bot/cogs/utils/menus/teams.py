@@ -8,6 +8,7 @@ from .. import api
 
 class TeamDraftMessage(discord.Message):
     """"""
+
     def __init__(self, message, bot, users, lobby):
         """"""
         for attr_name in message.__slots__:
@@ -22,7 +23,7 @@ class TeamDraftMessage(discord.Message):
         self.users = users
         self.lobby = lobby
         self.pick_emojis = dict(zip(utils.EMOJI_NUMBERS[1:], users))
-        self.pick_order = '1' + '2211'*20
+        self.pick_order = '1' + '2211' * 20
         self.pick_number = None
         self.users_left = None
         self.teams = None
@@ -67,7 +68,8 @@ class TeamDraftMessage(discord.Message):
             else:
                 users_left_str += f':heavy_multiplication_x:  ~~{user.mention}~~\n'
 
-        embed.insert_field_at(1, name=utils.trans("message-players-left"), value=users_left_str)
+        embed.insert_field_at(1, name=utils.trans(
+            "message-players-left"), value=users_left_str)
 
         status_str = ''
 
@@ -90,7 +92,8 @@ class TeamDraftMessage(discord.Message):
             return False
         elif not self.teams[0]:
             picking_team = self.teams[0]
-            self.captains_emojis.append(list(self.pick_emojis.keys())[list(self.pick_emojis.values()).index(picker)])
+            self.captains_emojis.append(list(self.pick_emojis.keys())[
+                                        list(self.pick_emojis.values()).index(picker)])
             self.users_left.remove(picker)
             picking_team.append(picker)
         elif self.teams[1] == [] and picker == self.teams[0][0]:
@@ -99,7 +102,8 @@ class TeamDraftMessage(discord.Message):
             return False
         elif not self.teams[1]:
             picking_team = self.teams[1]
-            self.captains_emojis.append(list(self.pick_emojis.keys())[list(self.pick_emojis.values()).index(picker)])
+            self.captains_emojis.append(list(self.pick_emojis.keys())[
+                                        list(self.pick_emojis.values()).index(picker)])
             self.users_left.remove(picker)
             picking_team.append(picker)
         elif picker == self.teams[0][0]:
@@ -136,7 +140,8 @@ class TeamDraftMessage(discord.Message):
             return
 
         await self.clear_reaction(reaction.emoji)
-        title = utils.trans('message-team-picked', user.display_name, pick.display_name)
+        title = utils.trans('message-team-picked',
+                            user.display_name, pick.display_name)
 
         if len(self.users) - len(self.users_left) == 2:
             await self.clear_reaction(self.captains_emojis[0])
@@ -144,7 +149,8 @@ class TeamDraftMessage(discord.Message):
             await self.clear_reaction(self.captains_emojis[1])
 
         if len(self.users_left) == 1:
-            fat_kid_team = self.teams[0] if len(self.teams[0]) <= len(self.teams[1]) else self.teams[1]
+            fat_kid_team = self.teams[0] if len(self.teams[0]) <= len(
+                self.teams[1]) else self.teams[1]
             fat_kid_team.append(self.users_left.pop(0))
             await self.edit(embed=self._picker_embed(title))
             if self.future is not None:
@@ -170,7 +176,8 @@ class TeamDraftMessage(discord.Message):
         if message.id != self.id:
             return
         self.bot.remove_listener(self._process_pick, name='on_reaction_add')
-        self.bot.remove_listener(self._message_deleted, name='on_message_delete')
+        self.bot.remove_listener(
+            self._message_deleted, name='on_message_delete')
         try:
             self.future.set_exception(ValueError)
         except asyncio.InvalidStateError:
@@ -197,8 +204,10 @@ class TeamDraftMessage(discord.Message):
                     captain = list(map(users_dict.get, player))
                     self.users_left.remove(captain[0])
                     team.append(captain[0])
-                    captain_emoji_index = list(self.pick_emojis.values()).index(captain[0])
-                    self.captains_emojis.append(list(self.pick_emojis.keys())[captain_emoji_index])
+                    captain_emoji_index = list(
+                        self.pick_emojis.values()).index(captain[0])
+                    self.captains_emojis.append(
+                        list(self.pick_emojis.keys())[captain_emoji_index])
             except Exception as e:
                 print(e)
                 captain_method = 'random'
@@ -211,8 +220,10 @@ class TeamDraftMessage(discord.Message):
                 captain = temp_users.pop()
                 self.users_left.remove(captain)
                 team.append(captain)
-                captain_emoji_index = list(self.pick_emojis.values()).index(captain)
-                self.captains_emojis.append(list(self.pick_emojis.keys())[captain_emoji_index])
+                captain_emoji_index = list(
+                    self.pick_emojis.values()).index(captain)
+                self.captains_emojis.append(
+                    list(self.pick_emojis.keys())[captain_emoji_index])
 
         await self.edit(embed=self._picker_embed(utils.trans('message-team-draft-begun')))
 
@@ -223,15 +234,17 @@ class TeamDraftMessage(discord.Message):
 
             self.future = self.bot.loop.create_future()
             self.bot.add_listener(self._process_pick, name='on_reaction_add')
-            self.bot.add_listener(self._message_deleted, name='on_message_delete')
+            self.bot.add_listener(self._message_deleted,
+                                  name='on_message_delete')
             try:
                 await asyncio.wait_for(self.future, 180)
             except asyncio.TimeoutError:
-                self.bot.remove_listener(self._process_pick, name='on_reaction_add')
-                self.bot.remove_listener(self._message_deleted, name='on_message_delete')
+                self.bot.remove_listener(
+                    self._process_pick, name='on_reaction_add')
+                self.bot.remove_listener(
+                    self._message_deleted, name='on_message_delete')
                 await self.clear_reactions()
                 raise
 
         await self.clear_reactions()
         return self.teams
-

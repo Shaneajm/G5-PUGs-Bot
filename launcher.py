@@ -30,7 +30,7 @@ def run_bot():
     Config.game_mode_wing_value = int(os.environ['GAMEMODE_WINGMAN'])
     Config.get5_comp_cfg = os.environ["GET5_COMPRTITIVE_CFG"]
     Config.get5_wing_cfg = os.environ["GET5_WINGMAN_CFG"]
-    
+
     # Instantiate bot and run
     from bot.bot import G5Bot
     bot = G5Bot()

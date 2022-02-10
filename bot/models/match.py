@@ -6,6 +6,7 @@ from ..cogs.utils.db import DB
 
 class Match:
     """"""
+
     def __init__(self, match_id, guild, channel, message, category, team1_channel, team2_channel):
         """"""
         self.id = match_id
@@ -42,13 +43,13 @@ class Match:
         """"""
         try:
             sql = "SELECT * FROM matches\n" \
-                    f"    WHERE id = {match_id};"
+                f"    WHERE id = {match_id};"
             match_data = await DB.fetch_row(sql)
             if match_data:
                 return Match.from_dict(bot, match_data)
-        except:
+        except Exception:
             pass
-    
+
     @staticmethod
     async def insert_match(data: dict, user_ids: list):
         """"""

@@ -55,7 +55,8 @@ class DB:
     @classmethod
     async def sync_guilds(cls, *guild_ids):
         """"""
-        insert_rows = [tuple([guild_id] + [None] * 4) for guild_id in guild_ids]
+        insert_rows = [tuple([guild_id] + [None] * 4)
+                       for guild_id in guild_ids]
 
         insert_statement = (
             'INSERT INTO guilds (id)\n'
@@ -88,7 +89,7 @@ class DB:
             async with connection.transaction():
                 users = await connection.fetch(statement, user_ids)
 
-        return [{col: val for col, val in user.items()} for user in users] 
+        return [{col: val for col, val in user.items()} for user in users]
 
     @classmethod
     async def insert_match_users(cls, match_id, *user_ids):

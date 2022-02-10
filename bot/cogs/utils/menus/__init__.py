@@ -1,5 +1,5 @@
 # __init__.py
- 
+
 from .mappool import MapPoolMessage
 from .ready import ReadyMessage
 from .teams import TeamDraftMessage

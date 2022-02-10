@@ -6,6 +6,7 @@ from aiohttp import ClientSession
 class Sessions:
     requests: ClientSession
 
+
 class Config:
     discord_token: str
     prefixes: list

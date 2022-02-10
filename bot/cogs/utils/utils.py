@@ -92,7 +92,8 @@ async def create_emojis(bot):
     """ Upload custom map emojis to guilds. """
     guild = bot.get_guild(Config.main_guild)
     if not guild:
-        bot.logger.error('Invalid "EMOJIS_GUILD_ID" value from .env file! closing the bot..')
+        bot.logger.error(
+            'Invalid "EMOJIS_GUILD_ID" value from .env file! closing the bot..')
         await bot.close()
 
     icons_dic = 'assets/maps/icons/'
@@ -111,12 +112,15 @@ async def create_emojis(bot):
                 with open(icons_dic + icon, 'rb') as image:
                     try:
                         emoji = await guild.create_custom_emoji(name=map_dev, image=image.read())
-                        bot.logger.info(f'Emoji "{emoji.name}" created successfully')
+                        bot.logger.info(
+                            f'Emoji "{emoji.name}" created successfully')
                     except discord.Forbidden:
-                        bot.logger.error('Bot does not have permission to create custom emojis in the specified server')
+                        bot.logger.error(
+                            'Bot does not have permission to create custom emojis in the specified server')
                         await bot.close()
                     except discord.HTTPException as e:
-                        bot.logger.error(f'HTTP exception raised when creating emoji for icon "{map_dev}": {e.text} ({e.code})')
+                        bot.logger.error(
+                            f'HTTP exception raised when creating emoji for icon "{map_dev}": {e.text} ({e.code})')
                         await bot.close()
                     except Exception as e:
                         bot.logger.error(f'Exception {e} occurred')

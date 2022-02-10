@@ -13,6 +13,7 @@ from .utils.menus import ReadyMessage, MapPoolMessage
 
 class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lobby-desc')):
     """"""
+
     def __init__(self, bot):
         self.bot = bot
         self.locked_lobby = {}
@@ -46,13 +47,15 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
     async def create_lobby(self, ctx, name=None):
         """"""
         if not name:
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         guild_mdl = await models.Guild.get_guild(self.bot, ctx.guild.id)
 
         if not guild_mdl.is_setup:
-            raise commands.UserInputError(message=utils.trans('bot-not-setup', self.bot.command_prefix[0]))
+            raise commands.UserInputError(message=utils.trans(
+                'bot-not-setup', self.bot.command_prefix[0]))
 
         dict_data = {'guild': ctx.guild.id, 'name': f"'{name}'"}
         lobby_id = await models.Lobby.insert_lobby(dict_data)
@@ -91,12 +94,14 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
         try:
             lobby_id = int(args[0])
         except (IndexError, ValueError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         lobby = await models.Lobby.get_lobby(self.bot, lobby_id, ctx.guild.id)
         if not lobby:
-            raise commands.UserInputError(message=utils.trans('invalid-lobby-id'))
+            raise commands.UserInputError(
+                message=utils.trans('invalid-lobby-id'))
 
         await models.Lobby.delete_lobby(lobby.id)
 
@@ -120,18 +125,20 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
             new_cap = int(args[1])
             lobby_id = int(args[0])
         except (IndexError, ValueError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         lobby = await models.Lobby.get_lobby(self.bot, lobby_id, ctx.guild.id)
         if not lobby:
-            raise commands.UserInputError(message=utils.trans('invalid-lobby-id'))
+            raise commands.UserInputError(
+                message=utils.trans('invalid-lobby-id'))
 
         if new_cap == lobby.capacity:
             msg = utils.trans('capacity-already', new_cap)
             raise commands.UserInputError(message=msg)
 
-        if new_cap < 2 or new_cap > 10 or new_cap %2 != 0:
+        if new_cap < 2 or new_cap > 10 or new_cap % 2 != 0:
             msg = utils.trans('capacity-out-range')
             raise commands.UserInputError(message=msg)
 
@@ -164,18 +171,21 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
             new_method = args[1].lower()
             lobby_id = int(args[0])
         except (IndexError, ValueError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         lobby = await models.Lobby.get_lobby(self.bot, lobby_id, ctx.guild.id)
         if not lobby:
-            raise commands.UserInputError(message=utils.trans('invalid-lobby-id'))
+            raise commands.UserInputError(
+                message=utils.trans('invalid-lobby-id'))
 
         curr_method = lobby.team_method
         valid_methods = ['captains', 'autobalance', 'random']
 
         if new_method not in valid_methods:
-            msg = utils.trans('team-valid-methods', valid_methods[0], valid_methods[1], valid_methods[2])
+            msg = utils.trans(
+                'team-valid-methods', valid_methods[0], valid_methods[1], valid_methods[2])
             raise commands.UserInputError(message=msg)
 
         if curr_method == new_method:
@@ -198,18 +208,21 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
             new_method = args[1].lower()
             lobby_id = int(args[0])
         except (IndexError, ValueError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         lobby = await models.Lobby.get_lobby(self.bot, lobby_id, ctx.guild.id)
         if not lobby:
-            raise commands.UserInputError(message=utils.trans('invalid-lobby-id'))
+            raise commands.UserInputError(
+                message=utils.trans('invalid-lobby-id'))
 
         curr_method = lobby.captain_method
         valid_methods = ['volunteer', 'rank', 'random']
 
         if new_method not in valid_methods:
-            msg = utils.trans('captains-valid-method', valid_methods[0], valid_methods[1], valid_methods[2])
+            msg = utils.trans(
+                'captains-valid-method', valid_methods[0], valid_methods[1], valid_methods[2])
             raise commands.UserInputError(message=msg)
 
         if curr_method == new_method:
@@ -231,18 +244,21 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
             new_series = args[1].lower()
             lobby_id = int(args[0])
         except (IndexError, ValueError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         lobby = await models.Lobby.get_lobby(self.bot, lobby_id, ctx.guild.id)
         if not lobby:
-            raise commands.UserInputError(message=utils.trans('invalid-lobby-id'))
+            raise commands.UserInputError(
+                message=utils.trans('invalid-lobby-id'))
 
         curr_series = lobby.series
         valid_values = ['bo1', 'bo2', 'bo3']
 
         if new_series not in valid_values:
-            msg = utils.trans('series-valid-methods', valid_values[0], valid_values[1], valid_values[2])
+            msg = utils.trans('series-valid-methods',
+                              valid_values[0], valid_values[1], valid_values[2])
             raise commands.UserInputError(message=msg)
 
         if curr_series == new_series:
@@ -264,12 +280,14 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
             new_region = args[1].upper()
             lobby_id = int(args[0])
         except (IndexError, ValueError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         lobby = await models.Lobby.get_lobby(self.bot, lobby_id, ctx.guild.id)
         if not lobby:
-            raise commands.UserInputError(message=utils.trans('invalid-lobby-id'))
+            raise commands.UserInputError(
+                message=utils.trans('invalid-lobby-id'))
 
         curr_region = lobby.region
         valid_regions = list(utils.FLAG_CODES.values())
@@ -300,12 +318,14 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
         try:
             lobby_id = int(args[0])
         except (IndexError, ValueError):
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         lobby = await models.Lobby.get_lobby(self.bot, lobby_id, ctx.guild.id)
         if not lobby:
-            raise commands.UserInputError(message=utils.trans('invalid-lobby-id'))
+            raise commands.UserInputError(
+                message=utils.trans('invalid-lobby-id'))
 
         message = await ctx.send('Map Pool')
         menu = MapPoolMessage(message, self.bot, ctx.author, lobby)
@@ -321,14 +341,14 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
         if len(queued_ids) == 0:
             queue_str = utils.trans('lobby-is-empty')
         else:
-            queued_users = [lobby.guild.get_member(user_id) for user_id in queued_ids]
+            queued_users = [lobby.guild.get_member(
+                user_id) for user_id in queued_ids]
             queue_str = ''.join(
                 f'{num}. {user.mention}\n' for num, user in enumerate(queued_users, start=1))
 
-
         embed = self.bot.embed_template(title=title, description=queue_str)
         embed.set_footer(text=utils.trans('lobby-footer'))
-        
+
         try:
             msg = await lobby.last_message.fetch()
             await msg.edit(embed=embed)
@@ -357,9 +377,11 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
                 removed = await models.Lobby.delete_queued_user(before_lobby.id, user.id)
 
                 if user.id in removed:
-                    title = utils.trans('lobby-user-removed', user.display_name)
+                    title = utils.trans(
+                        'lobby-user-removed', user.display_name)
                 else:
-                    title = utils.trans('lobby-user-not-in-lobby', user.display_name)
+                    title = utils.trans(
+                        'lobby-user-not-in-lobby', user.display_name)
 
                 await self.update_last_msg(before_lobby, title)
 
@@ -377,11 +399,14 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
                 queued_ids = results[2]
 
                 if not is_linked:
-                    title = utils.trans('lobby-user-not-linked', user.display_name)
+                    title = utils.trans(
+                        'lobby-user-not-linked', user.display_name)
                 elif in_match:
-                    title = utils.trans('lobby-user-in-match', user.display_name)
+                    title = utils.trans(
+                        'lobby-user-in-match', user.display_name)
                 elif user.id in queued_ids:
-                    title = utils.trans('lobby-user-in-lobby', user.display_name)
+                    title = utils.trans(
+                        'lobby-user-in-lobby', user.display_name)
                 elif len(queued_ids) >= after_lobby.capacity:
                     title = utils.trans('lobby-is-full', user.display_name)
                 else:
@@ -397,7 +422,8 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
                         linked_role = guild_mdl.linked_role
                         prematch_channel = guild_mdl.prematch_channel
                         queue_channel = after_lobby.queue_channel
-                        queued_users = [user.guild.get_member(user_id) for user_id in queued_ids]
+                        queued_users = [user.guild.get_member(
+                            user_id) for user_id in queued_ids]
 
                         await after.channel.set_permissions(linked_role, connect=False)
 
@@ -413,22 +439,27 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
                         unreadied = set(queued_users) - ready_users
 
                         if unreadied:
-                            description = ''.join(f':x: {user.mention}\n' for user in unreadied)
+                            description = ''.join(
+                                f':x: {user.mention}\n' for user in unreadied)
                             title = utils.trans('lobby-not-all-ready')
-                            burst_embed = self.bot.embed_template(title=title, description=description)
-                            burst_embed.set_footer(text=utils.trans('lobby-unready-footer'))
+                            burst_embed = self.bot.embed_template(
+                                title=title, description=description)
+                            burst_embed.set_footer(
+                                text=utils.trans('lobby-unready-footer'))
                             unreadied_ids = [user.id for user in unreadied]
 
                             awaitables = [
                                 ready_msg.clear_reactions(),
                                 ready_msg.edit(content='', embed=burst_embed),
-                                models.Lobby.delete_queued_users(after_lobby.id, unreadied_ids)
+                                models.Lobby.delete_queued_users(
+                                    after_lobby.id, unreadied_ids)
                             ]
 
                             for user in queued_users:
                                 awaitables.append(user.add_roles(linked_role))
                             for user in unreadied:
-                                awaitables.append(user.move_to(prematch_channel))
+                                awaitables.append(
+                                    user.move_to(prematch_channel))
                             await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
                         else:
                             await ready_msg.clear_reactions()
@@ -443,9 +474,11 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
                             if not new_match:
                                 awaitables = []
                                 for user in queued_users:
-                                    awaitables.append(user.add_roles(linked_role))
+                                    awaitables.append(
+                                        user.add_roles(linked_role))
                                 for user in queued_users:
-                                    awaitables.append(user.move_to(prematch_channel))
+                                    awaitables.append(
+                                        user.move_to(prematch_channel))
                                 await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
                             await models.Lobby.clear_queued_users(after_lobby.id)
@@ -454,7 +487,10 @@ class LobbyCog(commands.Cog, name='Lobby Category', description=utils.trans('lob
                         await self.update_last_msg(after_lobby, title)
 
                         self.locked_lobby[after_lobby.id] = False
-                        await after_lobby.lobby_channel.set_permissions(linked_role, connect=True)
+                        try:
+                            await after_lobby.lobby_channel.set_permissions(linked_role, connect=True)
+                        except discord.NotFound:
+                            pass
                         return
 
                 await self.update_last_msg(after_lobby, title)

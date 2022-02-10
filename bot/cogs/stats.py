@@ -32,19 +32,20 @@ class StatsCog(commands.Cog, name='Stats Category', description=utils.trans('sta
             raise commands.UserInputError(message=msg)
 
         description = '```ml\n' \
-                     f' {utils.trans("stats-kills")}:             {stats.kills} \n' \
-                     f' {utils.trans("stats-deaths")}:            {stats.deaths} \n' \
-                     f' {utils.trans("stats-assists")}:           {stats.assists} \n' \
-                     f' {utils.trans("stats-kdr")}:         {stats.kdr} \n' \
-                     f' {utils.trans("stats-hs")}:         {stats.headshot_kills} \n' \
-                     f' {utils.trans("stats-hsp")}:  {stats.hsp} \n' \
-                     f' {utils.trans("stats-played")}:    {stats.total_maps} \n' \
-                     f' {utils.trans("stats-wins")}:        {stats.wins} \n' \
-                     f' {utils.trans("stats-win-rate")}:       {stats.win_percent} \n' \
-                     f' ------------------------- \n' \
-                     f' {utils.trans("stats-rating")}:    {stats.average_rating} \n' \
+            f' {utils.trans("stats-kills")}:             {stats.kills} \n' \
+            f' {utils.trans("stats-deaths")}:            {stats.deaths} \n' \
+            f' {utils.trans("stats-assists")}:           {stats.assists} \n' \
+            f' {utils.trans("stats-kdr")}:         {stats.kdr} \n' \
+            f' {utils.trans("stats-hs")}:         {stats.headshot_kills} \n' \
+            f' {utils.trans("stats-hsp")}:  {stats.hsp} \n' \
+            f' {utils.trans("stats-played")}:    {stats.total_maps} \n' \
+            f' {utils.trans("stats-wins")}:        {stats.wins} \n' \
+            f' {utils.trans("stats-win-rate")}:       {stats.win_percent} \n' \
+            f' ------------------------- \n' \
+            f' {utils.trans("stats-rating")}:    {stats.average_rating} \n' \
                       '```'
-        embed = self.bot.embed_template(title=ctx.author.display_name, description=description)
+        embed = self.bot.embed_template(
+            title=ctx.author.display_name, description=description)
         await ctx.message.reply(embed=embed)
 
     @commands.command(brief=utils.trans('command-leaders-brief'),
@@ -71,13 +72,17 @@ class StatsCog(commands.Cog, name='Stats Category', description=utils.trans('sta
         widths = list(map(lambda x: len(max(x, key=len)), data))
         aligns = ['left', 'center', 'center', 'center', 'center', 'right']
         z = zip(data, widths, aligns)
-        formatted_data = [list(map(lambda x: utils.align_text(x, width, align), col)) for col, width, align in z]
-        formatted_data = list(map(list, zip(*formatted_data)))  # Transpose list for .format() string
+        formatted_data = [list(map(lambda x: utils.align_text(
+            x, width, align), col)) for col, width, align in z]
+        # Transpose list for .format() string
+        formatted_data = list(map(list, zip(*formatted_data)))
 
-        description = '```ml\n    {}  {}  {}  {}  {}  {} \n'.format(*formatted_data[0])
+        description = '```ml\n    {}  {}  {}  {}  {}  {} \n'.format(
+            *formatted_data[0])
 
         for rank, player_row in enumerate(formatted_data[1:], start=1):
-            description += ' {}. {}  {}  {}  {}  {}  {} \n'.format(rank, *player_row)
+            description += ' {}. {}  {}  {}  {}  {}  {} \n'.format(
+                rank, *player_row)
 
         description += '```'
 

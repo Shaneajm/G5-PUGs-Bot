@@ -33,7 +33,8 @@ class G5Bot(commands.AutoShardedBot):
 
         intents = discord.Intents(**intents_attrs)
         help_menu = PrettyHelp(sort_commands=False)
-        super().__init__(command_prefix=Config.prefixes, help_command=help_menu, case_insensitive=True, intents=intents)
+        super().__init__(command_prefix=Config.prefixes,
+                         help_command=help_menu, case_insensitive=True, intents=intents)
 
         # Set argument attributes
         self.all_maps = {}
@@ -58,7 +59,8 @@ class G5Bot(commands.AutoShardedBot):
         try:
             logging_cog = self.get_cog('LoggingCog')
             exc_type, exc_value, traceback = sys.exc_info()
-            logging_cog.log_exception(f'Uncaught exception when handling "{event_method}" event:', exc_value)
+            logging_cog.log_exception(
+                f'Uncaught exception when handling "{event_method}" event:', exc_value)
         except Exception as e:
             print(e)
 
@@ -67,7 +69,8 @@ class G5Bot(commands.AutoShardedBot):
         if 'color' not in kwargs:
             kwargs['color'] = self.color
         embed = discord.Embed(**kwargs)
-        embed.set_author(name='G5', url='https://top.gg/bot/816798869421031435', icon_url=self.logo)
+        embed.set_author(
+            name='G5', url='https://top.gg/bot/816798869421031435', icon_url=self.logo)
         return embed
 
     @commands.Cog.listener()
@@ -82,7 +85,6 @@ class G5Bot(commands.AutoShardedBot):
     @commands.Cog.listener()
     async def on_ready(self):
         """ Synchronize the guilds the bot is in with the guilds table. """
-        lobby_cog = self.get_cog('Lobby Category')
         match_cog = self.get_cog('Match Category')
 
         if self.guilds:
@@ -92,7 +94,7 @@ class G5Bot(commands.AutoShardedBot):
 
             if not match_cog.check_matches.is_running():
                 match_cog.check_matches.start()
-            
+
             self.logger.info('Bot is ready now!')
 
     @commands.Cog.listener()
@@ -111,29 +113,34 @@ class G5Bot(commands.AutoShardedBot):
         if isinstance(error, commands.MissingPermissions):
             await ctx.trigger_typing()
             missing_perm = error.missing_perms[0].replace('_', ' ')
-            embed = self.embed_template(title=utils.trans('command-required-perm', missing_perm), color=0xFF0000)
+            embed = self.embed_template(title=utils.trans(
+                'command-required-perm', missing_perm), color=0xFF0000)
             await ctx.message.reply(embed=embed)
 
         if isinstance(error, commands.UserInputError):
             await ctx.trigger_typing()
-            embed = self.embed_template(description='**' + str(error) + '**', color=0xFF0000)
+            embed = self.embed_template(
+                description='**' + str(error) + '**', color=0xFF0000)
             await ctx.message.reply(embed=embed)
 
         if isinstance(error, commands.CommandNotFound):
             # Get Levenshtein distance from commands
             in_cmd = ctx.invoked_with
             bot_cmds = list(self.commands)
-            lev_dists = [lev.distance(in_cmd, str(cmd)) / max(len(in_cmd), len(str(cmd))) for cmd in bot_cmds]
+            lev_dists = [lev.distance(in_cmd, str(
+                cmd)) / max(len(in_cmd), len(str(cmd))) for cmd in bot_cmds]
             lev_min = min(lev_dists)
 
             # Prep help message title
             embed_title = utils.trans('help-not-valid', ctx.message.content)
             prefixes = self.command_prefix
-            prefix = prefixes[0] if prefixes is not str else prefixes  # Prefix can be string or iterable of strings
+            # Prefix can be string or iterable of strings
+            prefix = prefixes[0] if prefixes is not str else prefixes
 
             # Make suggestion if lowest Levenshtein distance is under threshold
             if lev_min <= 0.5:
-                embed_title += utils.trans('help-did-you-mean') + f' `{prefix}{bot_cmds[lev_dists.index(lev_min)]}`?'
+                embed_title += utils.trans('help-did-you-mean') + \
+                    f' `{prefix}{bot_cmds[lev_dists.index(lev_min)]}`?'
             else:
                 embed_title += utils.trans('help-use-help', prefix)
 

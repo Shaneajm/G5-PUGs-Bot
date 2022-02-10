@@ -9,6 +9,7 @@ from .. import models
 
 class SetupCog(commands.Cog, name='Setup Category', description=utils.trans('setup-desc')):
     """"""
+
     def __init__(self, bot):
         """"""
         self.bot = bot
@@ -18,7 +19,8 @@ class SetupCog(commands.Cog, name='Setup Category', description=utils.trans('set
         """ Display the info embed. """
         description = utils.trans("help-bot-description", Config.web_panel,
                                   self.bot.command_prefix[0], self.bot.command_prefix[0])
-        embed = self.bot.embed_template(title='__G5 Bot__', description=description)
+        embed = self.bot.embed_template(
+            title='__G5 Bot__', description=description)
         embed.set_thumbnail(url=self.bot.logo)
         await ctx.message.reply(embed=embed)
 
@@ -30,7 +32,8 @@ class SetupCog(commands.Cog, name='Setup Category', description=utils.trans('set
         try:
             api_key = args[0]
         except IndexError:
-            msg = utils.trans('invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
+            msg = utils.trans(
+                'invalid-usage', self.bot.command_prefix[0], ctx.command.usage)
             raise commands.UserInputError(message=msg)
 
         try:

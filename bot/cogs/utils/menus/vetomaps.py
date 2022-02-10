@@ -6,6 +6,7 @@ from .. import utils
 
 class MapVetoMessage(discord.Message):
     """"""
+
     def __init__(self, message, bot, lobby):
         """"""
         for attr_name in message.__slots__:
@@ -48,9 +49,12 @@ class MapVetoMessage(discord.Message):
         embed.add_field(name=utils.trans("message-maps-left"), value=maps_str)
         if self.ban_number < len(self.ban_order):
             status_str = ''
-            status_str += utils.trans("message-capt1", self.captains[0].mention) + '\n'
-            status_str += utils.trans("message-capt2", self.captains[1].mention) + '\n\n'
-            status_str += utils.trans("message-current-capt", self._active_picker.mention) + '\n'
+            status_str += utils.trans("message-capt1",
+                                      self.captains[0].mention) + '\n'
+            status_str += utils.trans("message-capt2",
+                                      self.captains[1].mention) + '\n\n'
+            status_str += utils.trans("message-current-capt",
+                                      self._active_picker.mention) + '\n'
             status_str += utils.trans('message-map-method', method)
             embed.add_field(name=utils.trans("message-info"), value=status_str)
 
@@ -73,12 +77,14 @@ class MapVetoMessage(discord.Message):
 
         if self.lobby.series == 'bo3' and self.ban_number in [2, 3]:
             self.maps_pick.append(selected_map)
-            title = utils.trans('message-user-picked-map', user.display_name, selected_map.name)
+            title = utils.trans('message-user-picked-map',
+                                user.display_name, selected_map.name)
         else:
             self.maps_ban.append(selected_map)
-            title = utils.trans('message-user-banned-map', user.display_name, selected_map.name)
+            title = utils.trans('message-user-banned-map',
+                                user.display_name, selected_map.name)
             method = utils.trans('message-map-method-ban')
-        
+
         if self.lobby.series == 'bo3':
             if self.ban_number in [1, 2]:
                 method = utils.trans('message-map-method-pick')
@@ -104,7 +110,8 @@ class MapVetoMessage(discord.Message):
         if message.id != self.id:
             return
         self.bot.remove_listener(self._process_ban, name='on_reaction_add')
-        self.bot.remove_listener(self._message_deleted, name='on_message_delete')
+        self.bot.remove_listener(
+            self._message_deleted, name='on_message_delete')
         try:
             self.future.set_exception(ValueError)
         except asyncio.InvalidStateError:
@@ -132,7 +139,8 @@ class MapVetoMessage(discord.Message):
             await asyncio.wait_for(self.future, 180)
         except asyncio.TimeoutError:
             self.bot.remove_listener(self._process_ban, name='on_reaction_add')
-            self.bot.remove_listener(self._message_deleted, name='on_message_delete')
+            self.bot.remove_listener(
+                self._message_deleted, name='on_message_delete')
             await self.clear_reactions()
             raise
 

@@ -25,7 +25,8 @@ class ReadyMessage(discord.Message):
         """"""
         str_value = ''
         description = utils.trans('message-react-ready', '✅')
-        embed = self.bot.embed_template(title=utils.trans('message-lobby-filled-up'), description=description)
+        embed = self.bot.embed_template(title=utils.trans(
+            'message-lobby-filled-up'), description=description)
 
         for num, user in enumerate(self.users, start=1):
             if user not in self.reactors:

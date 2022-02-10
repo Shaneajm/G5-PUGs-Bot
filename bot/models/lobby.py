@@ -6,6 +6,7 @@ from ..cogs.utils.db import DB
 
 class Lobby:
     """"""
+
     def __init__(self, lobby_id, guild, name, region, capacity, series, category,
                  queue_channel, lobby_channel, last_message, team_method, captain_method, mpool):
         """"""
@@ -31,7 +32,8 @@ class Lobby:
         queue_channel = guild.get_channel(lobby_data['queue_channel'])
         lobby_channel = guild.get_channel(lobby_data['lobby_channel'])
         try:
-            last_message = queue_channel.get_partial_message(lobby_data['last_message'])
+            last_message = queue_channel.get_partial_message(
+                lobby_data['last_message'])
         except AttributeError:
             last_message = None
 
@@ -56,11 +58,11 @@ class Lobby:
         """"""
         try:
             sql = "SELECT * FROM lobbies\n" \
-                    f"    WHERE id = {lobby_id} AND guild = {guild_id};"
+                f"    WHERE id = {lobby_id} AND guild = {guild_id};"
             lobby_data = await DB.fetch_row(sql)
             if lobby_data:
                 return Lobby.from_dict(bot, lobby_data)
-        except:
+        except Exception:
             pass
 
     @staticmethod
@@ -75,7 +77,7 @@ class Lobby:
     async def get_lobby_by_voice_channel(bot, channel_id: int):
         """"""
         sql = "SELECT * FROM lobbies\n" \
-                f"    WHERE lobby_channel = {channel_id};"
+            f"    WHERE lobby_channel = {channel_id};"
         lobby_data = await DB.fetch_row(sql)
         if lobby_data:
             return Lobby.from_dict(bot, lobby_data)
@@ -84,7 +86,7 @@ class Lobby:
     async def get_lobby_by_text_channel(bot, channel_id: int):
         """"""
         sql = "SELECT * FROM lobbies\n" \
-                f"    WHERE queue_channel = {channel_id};"
+            f"    WHERE queue_channel = {channel_id};"
         lobby_data = await DB.fetch_row(sql)
         if lobby_data:
             return Lobby.from_dict(bot, lobby_data)
@@ -96,13 +98,14 @@ class Lobby:
         vals = ", ".join(str(val) for val in data.values())
         sql = f"INSERT INTO lobbies ({cols})\n" \
               f"    VALUES({vals})\n" \
-               "RETURNING id;"
+            "RETURNING id;"
         return await DB.query(sql, ret_key='id')
 
     @staticmethod
     async def update_lobby(lobby_id: int, data: dict):
         """"""
-        col_vals = ",\n    ".join(f"{key} = {val}" for key, val in data.items())
+        col_vals = ",\n    ".join(
+            f"{key} = {val}" for key, val in data.items())
         sql = "UPDATE lobbies\n" \
               f"    SET {col_vals}\n" \
               f"    WHERE id = {lobby_id};"
@@ -127,7 +130,7 @@ class Lobby:
         sql = "INSERT INTO queued_users (lobby_id, user_id)\n" \
               f"    VALUES({lobby_id}, {user_id});"
         await DB.query(sql)
-    
+
     @staticmethod
     async def delete_queued_user(lobby_id: int, user_id: int) -> List[int]:
         """"""
@@ -135,14 +138,14 @@ class Lobby:
               f"    WHERE lobby_id = {lobby_id} AND user_id = {user_id}\n" \
               "    RETURNING user_id;"
         return await DB.query(sql, ret_key='user_id')
-    
+
     @staticmethod
     async def delete_queued_users(lobby_id: int, user_ids: List[int]):
         """"""
         sql = "DELETE FROM queued_users\n" \
               f"    WHERE lobby_id = {lobby_id} AND user_id::BIGINT = ANY(ARRAY{user_ids}::BIGINT[]);"
         await DB.query(sql)
-        
+
     @staticmethod
     async def clear_queued_users(lobby_id: int):
         """"""

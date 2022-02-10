@@ -18,7 +18,8 @@ async def check_auth(auth):
             if '/auth/steam' in str(resp.url):
                 raise Exception('Invalid API Key')
     except (ClientConnectionError, TimeoutError, ContentTypeError):
-        raise Exception('Unable to connect to the API, Please try again later.')
+        raise Exception(
+            'Unable to connect to the API, Please try again later.')
 
 
 class Teams:
@@ -49,7 +50,8 @@ class Teams:
                 resp_data = await resp.json()
                 return cls(resp_data['team'])
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def create_team(name, users, auth):
@@ -76,11 +78,12 @@ class Teams:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status != 200:
-                    raise Exception(f'API ERROR!!! Unable to create team')
+                    raise Exception('API ERROR!!! Unable to create team')
                 resp_data = await resp.json()
                 return resp_data['id']
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def delete_team(team_id, auth):
@@ -93,14 +96,17 @@ class Teams:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 elif resp.status == 403:
-                    raise Exception(f'No permission to delete team id #{team_id}')
+                    raise Exception(
+                        f'No permission to delete team id #{team_id}')
                 elif resp.status == 404:
                     raise Exception(f'Team id #{team_id} was not found')
                 elif resp.status == 500:
-                    raise Exception(f'API ERROR!!! Unable to delete team id #{team_id}')
+                    raise Exception(
+                        f'API ERROR!!! Unable to delete team id #{team_id}')
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def add_team_member(team_id, user_data, auth, captain=False):
@@ -121,14 +127,17 @@ class Teams:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 elif resp.status == 403:
-                    raise Exception(f'No permission to add player {user_data.discord.mention} to team id #{team_id}')
+                    raise Exception(
+                        f'No permission to add player {user_data.discord.mention} to team id #{team_id}')
                 elif resp.status == 404:
                     raise Exception(f'Team id #{team_id} was not found')
                 elif resp.status == 500:
-                    raise Exception(f'API ERROR!!! Unable to add player {user_data.discord.mention} to team id #{team_id}')
+                    raise Exception(
+                        f'API ERROR!!! Unable to add player {user_data.discord.mention} to team id #{team_id}')
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def remove_team_member(team_id, user_data, auth):
@@ -144,14 +153,17 @@ class Teams:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 elif resp.status == 403:
-                    raise Exception(f'No permission to remove player {user_data.discord.mention} from team id #{team_id}')
+                    raise Exception(
+                        f'No permission to remove player {user_data.discord.mention} from team id #{team_id}')
                 elif resp.status == 404:
                     raise Exception(f'Team id #{team_id} was not found')
                 elif resp.status == 500:
-                    raise Exception(f'API ERROR!!! Unable to remove player {user_data.discord.mention} from team id #{team_id}')
+                    raise Exception(
+                        f'API ERROR!!! Unable to remove player {user_data.discord.mention} from team id #{team_id}')
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
 
 class Servers:
@@ -182,7 +194,8 @@ class Servers:
                 resp_data = await resp.json()
                 return cls(resp_data['server'])
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @classmethod
     async def get_servers(cls, auth):
@@ -194,11 +207,13 @@ class Servers:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status != 200:
-                    raise Exception(f'API ERROR!!! Unable to get the user game servers')
+                    raise Exception(
+                        'API ERROR!!! Unable to get the user game servers')
                 resp_data = await resp.json()
                 return [cls(server) for server in resp_data['servers']]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def is_server_available(server_id, auth):
@@ -214,7 +229,8 @@ class Servers:
                     raise Exception(resp_data['message'])
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
 
 class MapStats:
@@ -242,11 +258,13 @@ class MapStats:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status != 200:
-                    raise Exception(f'No map stats was found for match id #{match_id}')
+                    raise Exception(
+                        f'No map stats was found for match id #{match_id}')
                 resp_data = await resp.json()
                 return [cls(map_stat) for map_stat in resp_data['mapstats']]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
 
 class Scoreboard:
@@ -300,11 +318,13 @@ class Scoreboard:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status != 200:
-                    raise Exception(f'No players stats was found for match id #{match_id}')
+                    raise Exception(
+                        f'No players stats was found for match id #{match_id}')
                 resp_data = await resp.json()
                 return [cls(player_stat) for player_stat in resp_data['playerstats']]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
 
 class PlayerStats:
@@ -349,11 +369,13 @@ class PlayerStats:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status != 200:
-                    raise Exception(f'No stats was found for steam id {user_data.steam}')
+                    raise Exception(
+                        f'No stats was found for steam id {user_data.steam}')
                 resp_data = await resp.json()
                 return cls(resp_data['pugstats'])
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
 
 class Leaderboard:
@@ -403,9 +425,11 @@ class Leaderboard:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status != 200:
-                    raise Exception(f'API ERROR!!! Unable to get players stats')
+                    raise Exception(
+                        'API ERROR!!! Unable to get players stats')
                 resp_data = await resp.json()
-                players = list(filter(lambda x: x['steamId'] in db_steam_ids, resp_data['leaderboard']))
+                players = list(
+                    filter(lambda x: x['steamId'] in db_steam_ids, resp_data['leaderboard']))
                 if new_players:
                     api_steam_ids = [player['steamId'] for player in players]
                     for steam_id in db_steam_ids:
@@ -436,7 +460,8 @@ class Leaderboard:
                 players.sort(key=lambda x: db_steam_ids.index(x['steamId']))
                 return [cls(player) for player in players]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
 
 class Matches:
@@ -477,7 +502,8 @@ class Matches:
                 resp_data = await resp.json()
                 return cls(resp_data['match'])
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @classmethod
     async def get_recent_matches(cls, limit=20):
@@ -489,11 +515,12 @@ class Matches:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status != 200:
-                    raise Exception(f'API ERROR!!! Unable to recent matches')
+                    raise Exception('API ERROR!!! Unable to recent matches')
                 resp_data = await resp.json()
                 return [cls(match) for match in resp_data['matches']]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def create_match(server_id, team1_id, team2_id, str_maps, total_players, auth):
@@ -518,7 +545,7 @@ class Matches:
             'match_cvars': {
                 'sv_hibernate_when_empty': 0,
                 'game_mode': Config.game_mode_comp_value if total_players > 6 else Config.game_mode_wing_value,
-                'get5_live_cfg': f'get5/{Config.get5_comp_cfg}' if total_players > 6 else  f'get5/{Config.get5_wing_cfg}',
+                'get5_live_cfg': f'get5/{Config.get5_comp_cfg}' if total_players > 6 else f'get5/{Config.get5_wing_cfg}',
                 'get5_time_to_start': 600,  # warmup 10 minutes
                 'get5_kick_when_no_match_loaded': 1,
                 'get5_end_match_on_empty_server': 1
@@ -530,11 +557,12 @@ class Matches:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status != 200:
-                    raise Exception(f'API ERROR!!! Unable to create match')
+                    raise Exception('API ERROR!!! Unable to create match')
                 resp_data = await resp.json()
                 return resp_data['id']
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def cancel_match(match_id, auth):
@@ -547,16 +575,19 @@ class Matches:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status == 401:
-                    raise Exception(f'Match id #{match_id} is already finished')
+                    raise Exception(
+                        f'Match id #{match_id} is already finished')
                 elif resp.status == 403:
-                    raise Exception(f'No permission to cancel match id #{match_id}')
+                    raise Exception(
+                        f'No permission to cancel match id #{match_id}')
                 elif resp.status == 404:
                     raise Exception(f'Match id #{match_id} was not found')
                 elif resp.status in [422, 500]:
-                    raise Exception(f'Error on game server')
+                    raise Exception('Error on game server')
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def add_match_player(user_data, match_id, team, auth):
@@ -573,16 +604,19 @@ class Matches:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status == 401:
-                    raise Exception(f'Unable to add players to match id #{match_id} because it is already finished')
+                    raise Exception(
+                        f'Unable to add players to match id #{match_id} because it is already finished')
                 elif resp.status == 403:
-                    raise Exception(f'No permission to add players to match id #{match_id}')
+                    raise Exception(
+                        f'No permission to add players to match id #{match_id}')
                 elif resp.status == 404:
                     raise Exception(f'Match id #{match_id} was not found')
                 elif resp.status in [422, 500]:
-                    raise Exception(f'Error on game server')
+                    raise Exception('Error on game server')
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def remove_match_player(user_data, match_id, auth):
@@ -595,16 +629,19 @@ class Matches:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status == 401:
-                    raise Exception(f'Unable to remove players from match id #{match_id} because it is already finished')
+                    raise Exception(
+                        f'Unable to remove players from match id #{match_id} because it is already finished')
                 elif resp.status == 403:
-                    raise Exception(f'No permission to remove players from match id #{match_id}')
+                    raise Exception(
+                        f'No permission to remove players from match id #{match_id}')
                 elif resp.status == 404:
                     raise Exception(f'Match id #{match_id} was not found')
                 elif resp.status in [422, 500]:
-                    raise Exception(f'Error on game server')
+                    raise Exception('Error on game server')
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def pause_match(match_id, auth):
@@ -616,16 +653,19 @@ class Matches:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status == 401:
-                    raise Exception(f'Unable to pause match id #{match_id} because it is already finished')
+                    raise Exception(
+                        f'Unable to pause match id #{match_id} because it is already finished')
                 elif resp.status == 403:
-                    raise Exception(f'No permission to pause match id #{match_id}')
+                    raise Exception(
+                        f'No permission to pause match id #{match_id}')
                 elif resp.status == 404:
                     raise Exception(f'Match id #{match_id} was not found')
                 elif resp.status in [422, 500]:
-                    raise Exception(f'Error on game server')
+                    raise Exception('Error on game server')
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')
 
     @staticmethod
     async def unpause_match(match_id, auth):
@@ -637,13 +677,16 @@ class Matches:
                 if '/auth/steam' in str(resp.url):
                     raise Exception('Invalid API Key')
                 if resp.status == 401:
-                    raise Exception(f'Unable to unpause match id #{match_id} because it is already finished')
+                    raise Exception(
+                        f'Unable to unpause match id #{match_id} because it is already finished')
                 elif resp.status == 403:
-                    raise Exception(f'No permission to unpause match id #{match_id}')
+                    raise Exception(
+                        f'No permission to unpause match id #{match_id}')
                 elif resp.status == 404:
                     raise Exception(f'Match id #{match_id} was not found')
                 elif resp.status in [422, 500]:
-                    raise Exception(f'Error on game server')
+                    raise Exception('Error on game server')
                 return True
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception('Unable to connect to the API, Please try again later.')
+            raise Exception(
+                'Unable to connect to the API, Please try again later.')

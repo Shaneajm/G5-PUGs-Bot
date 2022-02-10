@@ -74,7 +74,8 @@ def log_lines(lvl, msg, *args, sub_lines=None, **kwargs):
         longest_subl_pref = len(max(sub_lines.keys(), key=len))
 
         for prefix, suffix in sub_lines.items():
-            msg += '\n    {:<{width}} {}'.format(prefix + ':', suffix, width=longest_subl_pref + 1)
+            msg += '\n    {:<{width}} {}'.format(
+                prefix + ':', suffix, width=longest_subl_pref + 1)
 
     logging.getLogger('G5.bot').log(lvl, msg, *args, **kwargs)
 
@@ -103,12 +104,14 @@ class LoggingCog(commands.Cog):
         if isinstance(error, (commands.MissingPermissions, commands.UserInputError, commands.CheckFailure)):
             return
 
-        self.log_exception(f'Uncaught exception in "{ctx.command}" command:', error)
+        self.log_exception(
+            f'Uncaught exception in "{ctx.command}" command:', error)
 
     def log_exception(self, msg, error):
         """"""
         msg += '\n\n'
-        exc_lines = traceback.format_exception(type(error), error, error.__traceback__)
+        exc_lines = traceback.format_exception(
+            type(error), error, error.__traceback__)
         exc = ''.join(exc_lines)
         self.logger.error(msg + indent(exc))
 
@@ -125,17 +128,21 @@ class LoggingCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
-        lines_dict = {'Caller': f'{ctx.author} ({ctx.author.id})', 'Guild': f'{ctx.guild} ({ctx.guild.id})'}
-        log_lines(logging.INFO, 'Command "%s" issued', ctx.command, sub_lines=lines_dict)
+        lines_dict = {
+            'Caller': f'{ctx.author} ({ctx.author.id})', 'Guild': f'{ctx.guild} ({ctx.guild.id})'}
+        log_lines(logging.INFO, 'Command "%s" issued',
+                  ctx.command, sub_lines=lines_dict)
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        log_lines(logging.INFO, 'Bot has been added to server "%s" (%s)', guild.name, guild.id)
+        log_lines(logging.INFO, 'Bot has been added to server "%s" (%s)',
+                  guild.name, guild.id)
         await self.update_status()
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
-        log_lines(logging.INFO, 'Bot has been removed from server "%s" (%s)', guild.name, guild.id)
+        log_lines(
+            logging.INFO, 'Bot has been removed from server "%s" (%s)', guild.name, guild.id)
         await self.update_status()
 
 
