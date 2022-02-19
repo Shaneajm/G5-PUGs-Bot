@@ -5,7 +5,7 @@ from aiohttp import ClientConnectionError, ContentTypeError
 from asyncio import TimeoutError
 
 from .db import DB
-from .utils import FLAG_CODES
+from .utils import FLAG_CODES, trans
 from ...resources import Config, Sessions
 
 
@@ -14,12 +14,11 @@ async def check_auth(auth):
     url = f'{Config.api_url}'
 
     try:
-        async with Sessions.requests.get(url=url, headers=auth) as resp:
-            if '/auth/steam' in str(resp.url):
-                raise Exception('Invalid API Key')
-    except (ClientConnectionError, TimeoutError, ContentTypeError):
-        raise Exception(
-            'Unable to connect to the API, Please try again later.')
+        await Sessions.requests.get(url=url, headers=auth)
+    except ContentTypeError:
+        raise Exception(trans('invalid-api-key'))
+    except (ClientConnectionError, TimeoutError):
+        raise Exception(trans('connect-api-error'))
 
 
 class Teams:
@@ -43,15 +42,12 @@ class Teams:
 
         try:
             async with Sessions.requests.get(url=url) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception(f'Team id {team_id} was not found')
                 resp_data = await resp.json()
                 return cls(resp_data['team'])
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def create_team(name, users, auth):
@@ -75,15 +71,14 @@ class Teams:
 
         try:
             async with Sessions.requests.post(url=url, json=[data], headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception('API ERROR!!! Unable to create team')
                 resp_data = await resp.json()
                 return resp_data['id']
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def delete_team(team_id, auth):
@@ -93,9 +88,7 @@ class Teams:
 
         try:
             async with Sessions.requests.delete(url=url, json=[data], headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
-                elif resp.status == 403:
+                if resp.status == 403:
                     raise Exception(
                         f'No permission to delete team id #{team_id}')
                 elif resp.status == 404:
@@ -104,9 +97,10 @@ class Teams:
                     raise Exception(
                         f'API ERROR!!! Unable to delete team id #{team_id}')
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def add_team_member(team_id, user_data, auth, captain=False):
@@ -124,9 +118,7 @@ class Teams:
 
         try:
             async with Sessions.requests.put(url=url, json=[data], headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
-                elif resp.status == 403:
+                if resp.status == 403:
                     raise Exception(
                         f'No permission to add player {user_data.discord.mention} to team id #{team_id}')
                 elif resp.status == 404:
@@ -135,9 +127,10 @@ class Teams:
                     raise Exception(
                         f'API ERROR!!! Unable to add player {user_data.discord.mention} to team id #{team_id}')
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def remove_team_member(team_id, user_data, auth):
@@ -150,9 +143,7 @@ class Teams:
 
         try:
             async with Sessions.requests.delete(url=url, json=[data], headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
-                elif resp.status == 403:
+                if resp.status == 403:
                     raise Exception(
                         f'No permission to remove player {user_data.discord.mention} from team id #{team_id}')
                 elif resp.status == 404:
@@ -161,9 +152,10 @@ class Teams:
                     raise Exception(
                         f'API ERROR!!! Unable to remove player {user_data.discord.mention} from team id #{team_id}')
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
 
 class Servers:
@@ -187,15 +179,14 @@ class Servers:
 
         try:
             async with Sessions.requests.get(url=url, headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception(f'Server id #{server_id} was not found')
                 resp_data = await resp.json()
                 return cls(resp_data['server'])
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @classmethod
     async def get_servers(cls, auth):
@@ -204,16 +195,15 @@ class Servers:
 
         try:
             async with Sessions.requests.get(url=url, headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception(
                         'API ERROR!!! Unable to get the user game servers')
                 resp_data = await resp.json()
                 return [cls(server) for server in resp_data['servers']]
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def is_server_available(server_id, auth):
@@ -222,15 +212,14 @@ class Servers:
 
         try:
             async with Sessions.requests.get(url=url, headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     resp_data = await resp.json()
                     raise Exception(resp_data['message'])
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
 
 class MapStats:
@@ -255,16 +244,13 @@ class MapStats:
 
         try:
             async with Sessions.requests.get(url=url) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception(
                         f'No map stats was found for match id #{match_id}')
                 resp_data = await resp.json()
                 return [cls(map_stat) for map_stat in resp_data['mapstats']]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+            raise Exception(trans('connect-api-error'))
 
 
 class Scoreboard:
@@ -315,16 +301,13 @@ class Scoreboard:
 
         try:
             async with Sessions.requests.get(url=url) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception(
                         f'No players stats was found for match id #{match_id}')
                 resp_data = await resp.json()
                 return [cls(player_stat) for player_stat in resp_data['playerstats']]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+            raise Exception(trans('connect-api-error'))
 
 
 class PlayerStats:
@@ -366,16 +349,13 @@ class PlayerStats:
 
         try:
             async with Sessions.requests.get(url=url) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception(
                         f'No stats was found for steam id {user_data.steam}')
                 resp_data = await resp.json()
                 return cls(resp_data['pugstats'])
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+            raise Exception(trans('connect-api-error'))
 
 
 class Leaderboard:
@@ -422,8 +402,6 @@ class Leaderboard:
 
         try:
             async with Sessions.requests.get(url=url) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception(
                         'API ERROR!!! Unable to get players stats')
@@ -460,8 +438,7 @@ class Leaderboard:
                 players.sort(key=lambda x: db_steam_ids.index(x['steamId']))
                 return [cls(player) for player in players]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+            raise Exception(trans('connect-api-error'))
 
 
 class Matches:
@@ -495,15 +472,12 @@ class Matches:
 
         try:
             async with Sessions.requests.get(url=url) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception(f'Match id #{match_id} was not found')
                 resp_data = await resp.json()
                 return cls(resp_data['match'])
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+            raise Exception(trans('connect-api-error'))
 
     @classmethod
     async def get_recent_matches(cls, limit=20):
@@ -512,15 +486,12 @@ class Matches:
 
         try:
             async with Sessions.requests.get(url=url) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception('API ERROR!!! Unable to recent matches')
                 resp_data = await resp.json()
                 return [cls(match) for match in resp_data['matches']]
         except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def create_match(server_id, team1_id, team2_id, str_maps, total_players, auth):
@@ -554,15 +525,14 @@ class Matches:
 
         try:
             async with Sessions.requests.post(url=url, json=[data], headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status != 200:
                     raise Exception('API ERROR!!! Unable to create match')
                 resp_data = await resp.json()
                 return resp_data['id']
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def cancel_match(match_id, auth):
@@ -572,8 +542,6 @@ class Matches:
 
         try:
             async with Sessions.requests.get(url=url, json=[data], headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status == 401:
                     raise Exception(
                         f'Match id #{match_id} is already finished')
@@ -585,9 +553,10 @@ class Matches:
                 elif resp.status in [422, 500]:
                     raise Exception('Error on game server')
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def add_match_player(user_data, match_id, team, auth):
@@ -601,8 +570,6 @@ class Matches:
 
         try:
             async with Sessions.requests.put(url=url, json=[data], headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status == 401:
                     raise Exception(
                         f'Unable to add players to match id #{match_id} because it is already finished')
@@ -614,9 +581,10 @@ class Matches:
                 elif resp.status in [422, 500]:
                     raise Exception('Error on game server')
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def remove_match_player(user_data, match_id, auth):
@@ -626,8 +594,6 @@ class Matches:
 
         try:
             async with Sessions.requests.put(url=url, json=[data], headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status == 401:
                     raise Exception(
                         f'Unable to remove players from match id #{match_id} because it is already finished')
@@ -639,9 +605,10 @@ class Matches:
                 elif resp.status in [422, 500]:
                     raise Exception('Error on game server')
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def pause_match(match_id, auth):
@@ -650,8 +617,6 @@ class Matches:
 
         try:
             async with Sessions.requests.get(url=url, headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status == 401:
                     raise Exception(
                         f'Unable to pause match id #{match_id} because it is already finished')
@@ -663,9 +628,10 @@ class Matches:
                 elif resp.status in [422, 500]:
                     raise Exception('Error on game server')
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))
 
     @staticmethod
     async def unpause_match(match_id, auth):
@@ -674,8 +640,6 @@ class Matches:
 
         try:
             async with Sessions.requests.get(url=url, headers=auth) as resp:
-                if '/auth/steam' in str(resp.url):
-                    raise Exception('Invalid API Key')
                 if resp.status == 401:
                     raise Exception(
                         f'Unable to unpause match id #{match_id} because it is already finished')
@@ -687,6 +651,7 @@ class Matches:
                 elif resp.status in [422, 500]:
                     raise Exception('Error on game server')
                 return True
-        except (ClientConnectionError, TimeoutError, ContentTypeError):
-            raise Exception(
-                'Unable to connect to the API, Please try again later.')
+        except ContentTypeError:
+            raise Exception(trans('invalid-api-key'))
+        except (ClientConnectionError, TimeoutError):
+            raise Exception(trans('connect-api-error'))

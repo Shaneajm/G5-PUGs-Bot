@@ -145,6 +145,8 @@
         "command-region-brief":         "Set or remove the region of the lobby",
         "region-not-valid":             "Invalid region",
         "lobby-region-already":         "Region is already set to **{}**",
-        "set-lobby-region":             "Region set to **{}**"
+        "set-lobby-region":             "Region set to **{}**",
+        "connect-api-error":            "Unable to connect to the API, Please try again later.",
+        "invalid-api-key":              "Invalid API Key"
     }
 }
