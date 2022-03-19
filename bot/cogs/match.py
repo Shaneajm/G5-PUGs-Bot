@@ -240,9 +240,19 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
         menu = MapVetoMessage(message, self.bot, lobby)
         return await menu.veto(captain_1, captain_2)
 
-    async def start_match(self, users, message, lobby, guild_mdl):
+    async def update_setup_msg(self, message, desc):
         """"""
         title = utils.trans('match-setup-process')
+        embed = self.bot.embed_template(title=title, description=desc)
+        try:
+            await message.edit(embed=embed)
+        except discord.NotFound:
+            pass
+        await asyncio.sleep(2)
+
+    async def start_match(self, users, message, lobby, guild_mdl):
+        """"""
+        
         description = ''
         try:
             if lobby.team_method == 'captains' and len(users) > 3:
@@ -256,30 +266,20 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
             team2_name = team_two[0].display_name
 
             description = '⌛️ 1. ' + utils.trans('creating-teams')
-            embed = self.bot.embed_template(
-                title=title, description=description)
-            await message.edit(content='', embed=embed)
+            await self.update_setup_msg(message, description)
             team1_id = await api.Teams.create_team(team1_name, team_one, guild_mdl.auth)
             team2_id = await api.Teams.create_team(team2_name, team_two, guild_mdl.auth)
-            await asyncio.sleep(2)
-
-            description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
-                          '⌛️ 2. ' + utils.trans('pick-maps')
-            embed = self.bot.embed_template(
-                title=title, description=description)
-            await message.edit(content='', embed=embed)
-            await asyncio.sleep(2)
+            
+            description = description.replace('⌛️', '✅')
+            description += '\n⌛️ 2. ' + utils.trans('pick-maps')
+            await self.update_setup_msg(message, description)
 
             veto_menu = MapVetoMessage(message, self.bot, lobby)
             maps_list = await veto_menu.veto(team_one[0], team_two[0])
 
-            description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
-                          '✅ 2. ' + utils.trans('pick-maps') + '\n' \
-                          '⌛️ 3. ' + utils.trans('find-servers')
-            embed = self.bot.embed_template(
-                title=title, description=description)
-            await message.edit(embed=embed)
-            await asyncio.sleep(2)
+            description = description.replace('⌛️', '✅')
+            description += '\n⌛️ 3. ' + utils.trans('find-servers')
+            await self.update_setup_msg(message, description)
 
             api_servers = await api.Servers.get_servers(guild_mdl.auth)
             match_server = None
@@ -300,25 +300,15 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
             if not match_server:
                 await api.Teams.delete_team(team1_id, guild_mdl.auth)
                 await api.Teams.delete_team(team2_id, guild_mdl.auth)
-                description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
-                              '✅ 2. ' + utils.trans('pick-maps') + '\n' \
-                              '❌ 3. ' + utils.trans('find-servers')
-                embed = self.bot.embed_template(
-                    title=title, description=description)
-                await message.edit(embed=embed)
+                description = description.replace('⌛️', '❌')
+                await self.update_setup_msg(message, description)
                 return False
 
             server_id = match_server.id
 
-            description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
-                          '✅ 2. ' + utils.trans('pick-maps') + '\n' \
-                          '✅ 3. ' + utils.trans('find-servers') + '\n' \
-                          '⌛️ 4. ' + utils.trans('creating-match')
-
-            embed = self.bot.embed_template(
-                title=title, description=description)
-            await message.edit(embed=embed)
-            await asyncio.sleep(2)
+            description = description.replace('⌛️', '✅')
+            description += '\n⌛️ 4. ' + utils.trans('creating-match')
+            await self.update_setup_msg(message, description)
 
             str_maps = ' '.join(m.dev_name for m in maps_list)
 
@@ -331,15 +321,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
                 guild_mdl.auth
             )
 
-            description = '✅ 1. ' + utils.trans('creating-teams') + '\n' \
-                          '✅ 2. ' + utils.trans('pick-maps') + '\n' \
-                          '✅ 3. ' + utils.trans('find-servers') + '\n' \
-                          '✅ 4. ' + utils.trans('creating-match')
-
-            embed = self.bot.embed_template(
-                title=title, description=description)
-            await message.edit(embed=embed)
-            await asyncio.sleep(2)
+            description = description.replace('⌛️', '✅')
+            await self.update_setup_msg(message, description)
 
         except asyncio.TimeoutError:
             description = utils.trans('match-took-too-long')
@@ -429,12 +412,8 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
 
             return True
 
-        embed = self.bot.embed_template(title=title, description=description)
-        try:
-            await message.edit(content='', embed=embed)
-        except discord.NotFound:
-            pass
-        await asyncio.sleep(2)
+        title = 'Match setup failed'
+        await message.edit(title=title, description=description)
         return False
 
     @tasks.loop(seconds=20.0)
