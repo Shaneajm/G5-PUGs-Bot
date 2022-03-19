@@ -541,6 +541,7 @@ class MatchCog(commands.Cog, name='Match Category', description=utils.trans('mat
         for user in match_players:
             if user is not None:
                 awaitables.append(user.move_to(guild_mdl.prematch_channel))
+                awaitables.append(user.add_roles(guild_mdl.linked_role))
 
         await asyncio.gather(*awaitables, loop=self.bot.loop, return_exceptions=True)
 
