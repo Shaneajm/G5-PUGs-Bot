@@ -26,7 +26,7 @@ steps = [
             '    api_key VARCHAR(128) DEFAULT NULL,\n'
             '    linked_role BIGINT DEFAULT NULL,\n'
             '    prematch_channel BIGINT DEFAULT NULL,\n'
-            '    category BIGINT DEFAULT NULL,\n'
+            '    category BIGINT DEFAULT NULL\n'
             ');'
         ),
         'DROP TABLE guilds;'
