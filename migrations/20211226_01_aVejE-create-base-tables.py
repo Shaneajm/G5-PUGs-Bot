@@ -81,7 +81,7 @@ steps = [
             'CREATE TABLE users('
             '    discord_id BIGSERIAL UNIQUE,\n'
             '    steam_id VARCHAR(18) UNIQUE,\n'
-            '    flag VARCHAR(3) DEFAULT NULL,\n'
+            '    flag VARCHAR DEFAULT NULL,\n'
             '    PRIMARY KEY (discord_id, steam_id)\n'
             ');'
         ),
